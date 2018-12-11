@@ -41,7 +41,6 @@ while 1
     
     % Set up stack acquisition
     hSI.hFastZ.enable = true;
-%     hSI.hStackManager.numSlices = 1;
     
     % Set volumes to scan
     volumes_per_second = hSI.hRoiManager.scanVolumeRate;
@@ -54,9 +53,6 @@ while 1
     hSI.hScan2D.logFileCounter = 1;         % Set file counter to 1    
     hSI.acqsPerLoop = nTrials;             
     hSI.extTrigEnable = true;               % Enable external trigger 
-    
-%     hSI.hStackManager.framesPerSlice = int32(ceil(blockDur/nTrials) * fps);
-%     disp(['Number of frames per trial: ' num2str(hSI.hStackManager.framesPerSlice)]);
     
     % Set up laser power modulation
     hSI.extCustomProps.stimPower = hSI.hBeams.powers;
