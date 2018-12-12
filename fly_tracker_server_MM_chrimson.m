@@ -1,6 +1,5 @@
 function [] = fly_tracker_server_MM_chrimson()
-% fly_tracker_server Summary of this function goes here
-
+% fly_tracker_server 
 % example for using the ScanImage API to set up a grab
 hSI = evalin('base','hSI');             % get hSI from the base workspace
 
@@ -54,10 +53,10 @@ while 1
     hSI.acqsPerLoop = nTrials;             
     hSI.extTrigEnable = true;               % Enable external trigger 
     
-    % Set up laser power modulation
+    % Make sure user functions are enabled for laser power modulation
     hSI.extCustomProps.stimPower = hSI.hBeams.powers;
     for iFun = 1:numel(hSI.hUserFunctions.userFunctionsCfg)
-        hSI.hUserFunctions.userFunctionsCfg(1).Enable = true;
+        hSI.hUserFunctions.userFunctionsCfg(iFun).Enable = true;
     end
     
     % Start acquisitions

@@ -18,10 +18,10 @@ switch event.EventName
         hSI.extCustomProps.frameCounts = {[]};
         hSI.extCustomProps.stimROIPower = {[]};
         hSI.extCustomProps.controlROIPower = {[]};
-        hSI.hRoiManager.roiGroupMroi.rois(1).powers = 0.3;
-        hSI.hRoiManager.roiGroupMroi.rois(2).powers = hSI.extCustomProps.stimPower;
+        hStimROI.powers = 0.3;
+        hControlROI.powers = hSI.extCustomProps.stimPower;
        
-        % Stim timing
+        % Get stim timing
         stimTimes = args; % [startTime, endTime]
         fps = hSI.hRoiManager.scanVolumeRate * hSI.hFastZ.numFramesPerVolume;
         hSI.extCustomProps.stimStartFrame = ceil(stimTimes(1) * fps);
@@ -33,6 +33,7 @@ switch event.EventName
                 num2str(hSI.extCustomProps.stimEndFrame)])
         disp('--------------------------------------------')
         disp('Starting trial 0...')
+        
     case 'acqModeDone'
         
         disp('Block finished')
@@ -75,21 +76,17 @@ switch event.EventName
         
         if hSI.extCustomProps.nFramesAcq == stimStartFrame
             % Switch laser power to stim ROI
-            hSI.hRoiManager.roiGroupMroi.rois(1).powers = hSI.extCustomProps.stimPower;
-            hSI.hRoiManager.roiGroupMroi.rois(2).powers = 0.3;
+            hStimROI.powers = hSI.extCustomProps.stimPower;
+            hControlROI.powers = 0.3;
             disp('Setting laser to full power in stim ROI')
-%             disp(['Setting stim ROI power to ', num2str(hStimROI.powers)])
-%             disp(['Setting control ROI power to ', num2str(hControlROI.powers)])
             
             hControlROI.enable = 0;
 
         elseif hSI.extCustomProps.nFramesAcq == stimEndFrame
             % Switch laser power to control ROI
-            hSI.hRoiManager.roiGroupMroi.rois(1).powers = 0.3;
-            hSI.hRoiManager.roiGroupMroi.rois(2).powers = hSI.extCustomProps.stimPower;
+           hStimROI.powers = 0.3;
+            hControlROI.powers = hSI.extCustomProps.stimPower;
             disp('Setting laser to full power in control ROI')
-%             disp(['Setting stim ROI power to ', num2str(hStimROI.powers)])
-%             disp(['Setting control ROI power to ', num2str(hControlROI.powers)])
             hControlROI.enable = 1;
         end
         
