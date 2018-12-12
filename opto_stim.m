@@ -78,16 +78,14 @@ switch event.EventName
             % Switch laser power to stim ROI
             hStimROI.powers = hSI.extCustomProps.stimPower;
             hControlROI.powers = 0.3;
-            disp('Setting laser to full power in stim ROI')
-            
-            hControlROI.enable = 0;
+            disp(['Setting laser to ', num2str(hSI.extCustomProps.stimPower), '% power in stim ROI'])
 
         elseif hSI.extCustomProps.nFramesAcq == stimEndFrame
             % Switch laser power to control ROI
-           hStimROI.powers = 0.3;
+            hStimROI.powers = 0.3;
             hControlROI.powers = hSI.extCustomProps.stimPower;
-            disp('Setting laser to full power in control ROI')
-            hControlROI.enable = 1;
+            disp(['Setting laser to ', num2str(hSI.extCustomProps.stimPower), '% power in control ROI'])
+
         end
         
         % Record laser powers
