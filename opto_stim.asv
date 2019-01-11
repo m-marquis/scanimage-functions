@@ -20,9 +20,8 @@ switch event.EventName
         hSI.extCustomProps.stimROIPower = {[]};
         hSI.extCustomProps.controlROIPower = {[]};
         hStimROI.powers = 0.3;
-        hControlROI.powers = hSI.extCustomProps.stimPower;
-        hSI.hBeams.updateBeamBufferAsync(true);
-%         hSI.hBeams.powers = 0.3;
+%         hControlROI.powers = hSI.extCustomProps.stimPower;
+        hSI.hBeams.powers = 0.3;
        
         % Get stim timing
         stimTimes = args; % [startTime, endTime]
@@ -43,9 +42,9 @@ switch event.EventName
         
         % Trim the empty array off the end of the log data variables
         hSI.extCustomProps.frameCounts(end) = [];
-%         hSI.extCustomProps.laserPower(end) = [];
-        hSI.extCustomProps.stimROIPower(end) = [];
-        hSI.extCustomProps.controlROIPower(end) = [];
+        hSI.extCustomProps.laserPower(end) = [];
+%         hSI.extCustomProps.stimROIPower(end) = [];
+%         hSI.extCustomProps.controlROIPower(end) = [];
         
         % Save log file for the block that just finished
         optoStimInfo = hSI.extCustomProps;        
@@ -58,16 +57,16 @@ switch event.EventName
         % Reset variables for next trial
         hSI.extCustomProps.nFramesAcq = 0;
         hSI.extCustomProps.frameCounts{end + 1} = [];
-        hSI.extCustomProps.stimROIPower{end + 1} = [];
-        hSI.extCustomProps.controlROIPower{end + 1} = [];
-%         hSI.extCustomProps.laserPower{end + 1} = [];
+%         hSI.extCustomProps.stimROIPower{end + 1} = [];
+%         hSI.extCustomProps.controlROIPower{end + 1} = [];
+        hSI.extCustomProps.laserPower{end + 1} = [];
         disp(['Starting trial ' num2str(hSI.hScan2D.logFileCounter), '...'])
         
     case 'frameAcquired'
         
-        % Get handles for stimulus and control ROIs
-        hStimROI = hSI.hRoiManager.roiGroupMroi.rois(1);
-        hControlROI = hSI.hRoiManager.roiGroupMroi.rois(2);
+%         % Get handles for stimulus and control ROIs
+%         hStimROI = hSI.hRoiManager.roiGroupMroi.rois(1);
+%         hControlROI = hSI.hRoiManager.roiGroupMroi.rois(2);
         
         % Get stim start and end frames
         stimStartFrame = hSI.extCustomProps.stimStartFrame;
@@ -81,29 +80,27 @@ switch event.EventName
         
         if hSI.extCustomProps.nFramesAcq == stimStartFrame
             % Switch laser power to stim ROI
-            hStimROI.powers = hSI.extCustomProps.stimPower;
-            hControlROI.powers = 0.3;
-            hSI.hBeams.updateBeamBufferAsync(true);
-            disp(['Setting laser to ', num2str(hSI.extCustomProps.stimPower), '% power in stim ROI'])
-%               hSI.hBeams.powers = hSI.extCustomProps.stimPower;
+%             hStimROI.powers = hSI.extCustomProps.stimPower;
+%             hControlROI.powers = 0.3;
+%             disp(['Setting laser to ', num2str(hSI.extCustomProps.stimPower), '% power in stim ROI'])
+              hSI.hBeams.powers = hSI.extCustomProps.stimPower;
 
 
         elseif hSI.extCustomProps.nFramesAcq == stimEndFrame
             % Switch laser power to control ROI
-            hStimROI.powers = 0.3;
-            hControlROI.powers = hSI.extCustomProps.stimPower;
-            hSI.hBeams.updateBeamBufferAsync(true);
-            disp(['Setting laser to ', num2str(hSI.extCustomProps.stimPower), '% power in control ROI'])
-%               hSI.hBeams.powers = 0.3;
+%             hStimROI.powers = 0.3;
+%             hControlROI.powers = hSI.extCustomProps.stimPower;
+%             disp(['Setting laser to ', num2str(hSI.extCustomProps.stimPower), '% power in control ROI'])
+              hSI.hBeams.powers = 0.3;
         end
         
         % Record laser powers
-        hSI.extCustomProps.stimROIPower{hSI.hScan2D.logFileCounter}(end + 1) ...
-            = hStimROI.powers;
-        hSI.extCustomProps.controlROIPower{hSI.hScan2D.logFileCounter}(end + 1) ...
-            = hControlROI.powers;
-%           hSI.extCustomProps.laserPower{hSI.hScan2D.logFileCounter}(end + 1)...
-%               = hSI.hBeams.powers;
+%         hSI.extCustomProps.stimROIPower{hSI.hScan2D.logFileCounter}(end + 1) ...
+%             = hStimROI.powers;
+%         hSI.extCustomProps.controlROIPower{hSI.hScan2D.logFileCounter}(end + 1) ...
+%             = hControlROI.powers;
+          hSI.extCustomProps.laserPower{hSI.hScan2D.logFileCounter}(end + 1)...
+              = hSI.hBeams.powers;
         
 end%case
 
