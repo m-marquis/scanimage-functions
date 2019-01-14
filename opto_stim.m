@@ -16,11 +16,14 @@ switch event.EventName
         hSI.extCustomProps.nFramesAcq = 0;
         hSI.hBeams.beamsOff();
         hSI.extCustomProps.frameCounts = {[]};
+%         hSI.extCustomProps.laserPower = {[]};
         hSI.extCustomProps.stimROIPower = {[]};
         hSI.extCustomProps.controlROIPower = {[]};
         hStimROI.powers = 0.3;
         hControlROI.powers = hSI.extCustomProps.stimPower;
-       
+        hSI.hBeams.updateBeamBufferAsync(true);
+        %         hSI.hBeams.powers = 0.3;
+        
         % Get stim timing
         stimTimes = args; % [startTime, endTime]
         fps = hSI.hRoiManager.scanVolumeRate * hSI.hFastZ.numFramesPerVolume;
@@ -35,9 +38,14 @@ switch event.EventName
         else
             hSI.extCustomProps.stimStartFrame = [];
             hSI.extCustomProps.stimEndFrame = [];
+<<<<<<< HEAD
             disp('No photostimulation in this trial');
         end
         
+=======
+            disp('Not using photostim in this trial...')
+        end
+>>>>>>> 8dd7c0075e93887185104d55cca11123a3374754
         disp('--------------------------------------------')
         disp('Starting trial 0...')
         
@@ -47,6 +55,7 @@ switch event.EventName
         
         % Trim the empty array off the end of the log data variables
         hSI.extCustomProps.frameCounts(end) = [];
+%         hSI.extCustomProps.laserPower(end) = [];
         hSI.extCustomProps.stimROIPower(end) = [];
         hSI.extCustomProps.controlROIPower(end) = [];
         
@@ -63,6 +72,7 @@ switch event.EventName
         hSI.extCustomProps.frameCounts{end + 1} = [];
         hSI.extCustomProps.stimROIPower{end + 1} = [];
         hSI.extCustomProps.controlROIPower{end + 1} = [];
+%         hSI.extCustomProps.laserPower{end + 1} = [];
         disp(['Starting trial ' num2str(hSI.hScan2D.logFileCounter), '...'])
         
     case 'frameAcquired'
@@ -80,19 +90,37 @@ switch event.EventName
         hSI.extCustomProps.nFramesAcq = hSI.extCustomProps.nFramesAcq + 1;
         hSI.extCustomProps.frameCounts{fileCount}(end + 1) ...
             = hSI.extCustomProps.nFramesAcq;
+<<<<<<< HEAD
         if ~isempty(stimStartFrame)
+=======
+
+        if ~isempty(stimStartFrame) && ~isempty(stimEndFrame)
+>>>>>>> 8dd7c0075e93887185104d55cca11123a3374754
             if hSI.extCustomProps.nFramesAcq == stimStartFrame
                 % Switch laser power to stim ROI
                 hStimROI.powers = hSI.extCustomProps.stimPower;
                 hControlROI.powers = 0.3;
+<<<<<<< HEAD
                 disp(['Setting laser to ', num2str(hSI.extCustomProps.stimPower), '% power in stim ROI'])
+=======
+                hSI.hBeams.updateBeamBufferAsync(true);
+                disp(['Setting laser to ', num2str(hSI.extCustomProps.stimPower), '% power in stim ROI'])
+                %               hSI.hBeams.powers = hSI.extCustomProps.stimPower;
+                
+>>>>>>> 8dd7c0075e93887185104d55cca11123a3374754
                 
             elseif hSI.extCustomProps.nFramesAcq == stimEndFrame
                 % Switch laser power to control ROI
                 hStimROI.powers = 0.3;
                 hControlROI.powers = hSI.extCustomProps.stimPower;
+<<<<<<< HEAD
                 disp(['Setting laser to ', num2str(hSI.extCustomProps.stimPower), '% power in control ROI'])
                 
+=======
+                hSI.hBeams.updateBeamBufferAsync(true);
+                disp(['Setting laser to ', num2str(hSI.extCustomProps.stimPower), '% power in control ROI'])
+                %               hSI.hBeams.powers = 0.3;
+>>>>>>> 8dd7c0075e93887185104d55cca11123a3374754
             end
         end
         
@@ -101,6 +129,8 @@ switch event.EventName
             = hStimROI.powers;
         hSI.extCustomProps.controlROIPower{hSI.hScan2D.logFileCounter}(end + 1) ...
             = hControlROI.powers;
+%           hSI.extCustomProps.laserPower{hSI.hScan2D.logFileCounter}(end + 1)...
+%               = hSI.hBeams.powers;
         
 end%case
 
