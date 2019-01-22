@@ -25,9 +25,13 @@ switch event.EventName
         hSI.extCustomProps.controlROIPower = {[]};
         hStimROI.powers = 0.3;
         hControlROI.powers = hSI.extCustomProps.stimPower;
-
+        
         % Get stim timing
-        stimTimes = args{1}; % [startTime, endTime]
+        if iscell(args)
+            stimTimes = args{1}; % [startTime, endTime]
+        else
+            stimTimes = args(1); % [startTime, endTime]
+        end
         fps = hSI.hRoiManager.scanVolumeRate * hSI.hFastZ.numFramesPerVolume;
         if ~isempty(stimTimes)
             hSI.extCustomProps.stimStartFrame = ceil(stimTimes(1) * fps);
