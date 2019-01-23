@@ -23,14 +23,18 @@ switch event.EventName
         hSI.extCustomProps.frameCounts = {[]};
         hSI.extCustomProps.stimROIPower = {[]};
         hSI.extCustomProps.controlROIPower = {[]};
+        hSI.extCustomProps.interleaveTrials = 0;
         hStimROI.powers = 0.3;
         hControlROI.powers = hSI.extCustomProps.stimPower;
         
-        % Get stim timing
+        hSI.hBeams.updateBeamBufferAsync(true);
+        
+        % Get stim timing and interleaveTrials boolean
         if iscell(args)
             stimTimes = args{1}; % [startTime, endTime]
+            hSI.extCustomProps.interleaveTrials = args{2};
         else
-            stimTimes = args(1); % [startTime, endTime]
+            stimTimes = args; % [startTime, endTime]
         end
         fps = hSI.hRoiManager.scanVolumeRate * hSI.hFastZ.numFramesPerVolume;
         if ~isempty(stimTimes)
@@ -90,18 +94,22 @@ switch event.EventName
         hSI.extCustomProps.frameCounts{fileCount}(end + 1) ...
             = hSI.extCustomProps.nFramesAcq;
         if ~isempty(stimStartFrame)
-            if numel(args) < 2 || ~args{2} || mod(fileCount, 2)
+%             disp(fileCount)
+%             disp(hSI.extCustomProps.interleaveTrials)
+            if ~hSI.extCustomProps.interleaveTrials || mod(fileCount, 2)
                 
                 if hSI.extCustomProps.nFramesAcq == stimStartFrame
                     % Switch laser power to stim ROI
                     hStimROI.powers = hSI.extCustomProps.stimPower;
                     hControlROI.powers = 0.3;
+                    hSI.hBeams.updateBeamBufferAsync(true);
                     disp(['Setting laser to ', num2str(hSI.extCustomProps.stimPower), '% power in stim ROI'])
                     
                 elseif hSI.extCustomProps.nFramesAcq == stimEndFrame
                     % Switch laser power to control ROI
                     hStimROI.powers = 0.3;
                     hControlROI.powers = hSI.extCustomProps.stimPower;
+                    hSI.hBeams.updateBeamBufferAsync(true);
                     disp(['Setting laser to ', num2str(hSI.extCustomProps.stimPower), '% power in control ROI'])
                     
                 end

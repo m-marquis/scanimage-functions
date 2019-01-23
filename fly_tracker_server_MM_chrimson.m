@@ -44,7 +44,7 @@ while 1
     % Set volumes to scan
     volumes_per_second = hSI.hRoiManager.scanVolumeRate;
     disp(['VPS: ' num2str( volumes_per_second )]);
-    hSI.hFastZ.numVolumes = int32(ceil((blockDur/nTrials) * volumes_per_second));
+    hSI.hFastZ.numVolumes = int32(ceil((blockDur/nTrials) * volumes_per_second) + 1);
     disp(['Number of volumes per trial: ' num2str( hSI.hFastZ.numVolumes )]);
     
     % Configure acquitions
