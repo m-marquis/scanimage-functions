@@ -1,4 +1,4 @@
-function opto_stim(src, event, args)
+function opto_stim(src, event, varargin)
 % Custom user function to allow online control of laser power in multiple ROIs at specific times in
 % each trial by counting the acquired frames and updating ROI power accordingly.
 % First argument is [stimStart StimEnd] times in seconds, and second argument is a boolean that 
@@ -30,11 +30,11 @@ switch event.EventName
         hSI.hBeams.updateBeamBufferAsync(true);
         
         % Get stim timing and interleaveTrials boolean
-        if iscell(args)
-            stimTimes = args{1}; % [startTime, endTime]
-            hSI.extCustomProps.interleaveTrials = args{2};
+        if iscell(varargin)
+            stimTimes = varargin{1}; % [startTime, endTime]
+            hSI.extCustomProps.interleaveTrials = varargin{2};
         else
-            stimTimes = args; % [startTime, endTime]
+            stimTimes = varargin; % [startTime, endTime]
         end
         fps = hSI.hRoiManager.scanVolumeRate * hSI.hFastZ.numFramesPerVolume;
         if ~isempty(stimTimes)
