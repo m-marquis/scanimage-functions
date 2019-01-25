@@ -32,7 +32,9 @@ switch event.EventName
         % Get stim timing and interleaveTrials boolean
         if iscell(varargin)
             stimTimes = varargin{1}; % [startTime, endTime]
-            hSI.extCustomProps.interleaveTrials = varargin{2};
+            if numel(varargin) > 1
+                hSI.extCustomProps.interleaveTrials = varargin{2};
+            end
         else
             stimTimes = varargin; % [startTime, endTime]
         end
