@@ -42,6 +42,12 @@ switch event.EventName
         if ~isempty(stimTimes)
             hSI.extCustomProps.stimStartFrame = ceil(stimTimes(1) * fps);
             hSI.extCustomProps.stimEndFrame = ceil(stimTimes(2) * fps);
+            if hSI.extCustomProps.stimStartFrame < 2
+                hSI.extCustomProps.stimStartFrame = 2;
+            end
+            if hSI.extCustomProps.stimEndFrame >= hSI.hFastZ.numVolumes
+                hSI.extCustomProps.stimEndFrame = hSI.hFastZ.numVolumes - 1;
+            end
             disp(['Stim on time: ', num2str(stimTimes(1)), ' sec'])
             disp(['Stim off time: ', num2str(stimTimes(2)), ' sec'])
             disp(['Stim on from frames ', ...
