@@ -19,6 +19,7 @@ switch event.EventName
         % Setup as acquisition starts
         hSI.extCustomProps.nFramesAcq = 0;
         hSI.extCustomProps.frameCounts = {[]};
+        hSI.extCustomProps.powerLog = {[]};
         
         stimTimes = varargin{1};
         hSI.extCustomProps.stimROIPower = varargin{2};
@@ -56,7 +57,7 @@ switch event.EventName
         
         % Trim the empty array off the end of the log data variables
         hSI.extCustomProps.frameCounts(end) = [];
-        hSI.extCustomProps.stimROIPower(end) = [];
+        hSI.extCustomProps.powerLog(end) = [];
         
         % Save log file for the block that just finished
         optoStimInfo = hSI.extCustomProps;        
@@ -69,7 +70,7 @@ switch event.EventName
         % Reset variables for next trial
         hSI.extCustomProps.nFramesAcq = 0;
         hSI.extCustomProps.frameCounts{end + 1} = [];
-        hSI.extCustomProps.stimROIPower{end + 1} = [];
+        hSI.extCustomProps.powerLog{end + 1} = [];
         disp(['Starting trial ' num2str(hSI.hScan2D.logFileCounter), '...'])
         
     case 'frameAcquired'
@@ -104,7 +105,7 @@ switch event.EventName
         end
         
         % Record laser powers
-        hSI.extCustomProps.stimROIPower{hSI.hScan2D.logFileCounter}(end + 1) ...
+        hSI.extCustomProps.powerLog{hSI.hScan2D.logFileCounter}(end + 1) ...
             = hSI.hBeams.powers;
         
 end%case
