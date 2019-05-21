@@ -1,7 +1,7 @@
 
 % Load tif data
 
-tifDir = dir('E:\Michael\2019_02_04_exp_1\*sid_2_bid_0*.tif');
+tifDir = dir('E:\Michael\2019_02_04_exp_1\*sid_5_bid_0*.tif');
 nTrials = numel(tifDir);
 
 rawData = [];

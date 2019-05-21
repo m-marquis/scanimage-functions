@@ -1,6 +1,5 @@
 function [] = fly_tracker_server_MM()
 % fly_tracker_server Summary of this function goes here
-
 % example for using the ScanImage API to set up a grab
 hSI = evalin('base','hSI');             % get hSI from the base workspace
 

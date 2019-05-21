@@ -36,32 +36,34 @@ while 1
     blockDur = str2num(durCell{:});
     nTrialCell = regexp(data, '(?<=nTrials_).*', 'match');
     nTrials = str2num(nTrialCell{:});
-    hSI.hScan2D.logFileStem = data; % set the base file name for the Tiff file   
+    hSI.hScan2D.logFileStem = data; % set the base file name for the Tiff file     
     
-    % Set up stack acquisition
-    hSI.hFastZ.enable = true;
-    
-    % Set volumes to scan
-    volumes_per_second = hSI.hRoiManager.scanVolumeRate;
-    disp(['VPS: ' num2str( volumes_per_second )]);
-    hSI.hFastZ.numVolumes = int32(ceil((blockDur/nTrials) * volumes_per_second) + 1);
-    disp(['Number of volumes per trial: ' num2str( hSI.hFastZ.numVolumes )]);
-    
-    % Configure acquitions
-    hSI.hChannels.loggingEnable = true;    % Make sure logging is enabled  
+     % Configure acquitions
+    hSI.hChannels.loggingEnable = true;     % Make sure logging is enabled  
     hSI.hScan2D.logFileCounter = 1;         % Set file counter to 1    
-    hSI.acqsPerLoop = nTrials;             
     hSI.extTrigEnable = true;               % Enable external trigger 
+    hSI.extCustomProps.nTrials = nTrials;   % Set total number of trials
+    hSI.hFastZ.enable = true;
+    hSI.acqsPerLoop = 1;
+    
+    % Set up scan cycles
+    cycles_per_second = hSI.hRoiManager.scanFrameRate;
+    disp(['Cycles/sec: ' num2str( cycles_per_second )]);
+    hSI.hStackManager.framesPerSlice = int32(ceil((blockDur) * cycles_per_second) + 1);
+    disp(['Total number of cycles in block: ' num2str( hSI.hStackManager.framesPerSlice)]);
+    hSI.extCustomProps.cyclesPerTrial = floor(hSI.hStackManager.framesPerSlice ./ hSI.extCustomProps.nTrials);
+    disp(['Cycles per trial: ', num2str(hSI.extCustomProps.cyclesPerTrial)]);
+%     hSI.hScan2D.logFramesPerFile = hSI.extCustomProps.cyclesPerTrial;
     
     % Make sure user functions are enabled for laser power modulation
-    hSI.extCustomProps.stimPower = hSI.hBeams.powers;
+    hSI.extCustomProps.imagingPower = hSI.hBeams.powers;
     for iFun = 1:numel(hSI.hUserFunctions.userFunctionsCfg)
         hSI.hUserFunctions.userFunctionsCfg(iFun).Enable = true;
     end
     
     % Start acquisitions
     pause(1.0);
-    hSI.startLoop();
+    hSI.startGrab();
     
     % Signal back to the fly tracker client that it can start daq and image
     % acquisition.
@@ -70,7 +72,6 @@ end
 
 % Clean up
 hSI.extTrigEnable = false;
-hSI.hBeams.powers = hSI.extCustomProps.stimPower;
 
 %close the socket
 fclose(t);
