@@ -51,9 +51,9 @@ while 1
     disp(['Cycles/sec: ' num2str( cycles_per_second )]);
     hSI.hStackManager.framesPerSlice = int32(ceil((blockDur) * cycles_per_second) + 1);
     disp(['Total number of cycles in block: ' num2str( hSI.hStackManager.framesPerSlice)]);
-    hSI.extCustomProps.cyclesPerTrial = floor(hSI.hStackManager.framesPerSlice ./ hSI.extCustomProps.nTrials);
+    hSI.extCustomProps.cyclesPerTrial = floor(hSI.hStackManager.framesPerSlice ./ nTrials);
     disp(['Cycles per trial: ', num2str(hSI.extCustomProps.cyclesPerTrial)]);
-%     hSI.hScan2D.logFramesPerFile = hSI.extCustomProps.cyclesPerTrial;
+    hSI.hScan2D.logFramesPerFile = hSI.extCustomProps.cyclesPerTrial;
     
     % Make sure user functions are enabled for laser power modulation
     hSI.extCustomProps.imagingPower = hSI.hBeams.powers;
