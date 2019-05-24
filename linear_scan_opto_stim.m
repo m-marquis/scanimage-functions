@@ -113,11 +113,6 @@ switch event.EventName
     case 'acqModeDone'
         
         disp('Block finished')
-%         
-%         % Trim the empty array off the end of the log data variables
-%         hSI.extCustomProps.frameCounts(end) = [];
-%         hSI.extCustomProps.stimROIPowerLog(end) = [];
-%         hSI.extCustomProps.controlROIPowerLog(end) = [];
         
         % Save log file for the block that just finished
         optoStimInfo = hSI.extCustomProps;        
@@ -261,6 +256,7 @@ switch event.EventName
             disp(ME.message);
             rethrow(ME)
         end
+
 end%case
 
 
