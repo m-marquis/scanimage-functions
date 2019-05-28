@@ -23,18 +23,29 @@ metadataFileName = fullfile(parentDir,[baseFileName, '_00001']);
 % Parse ROI data
 sampRate = header.sampleRate;
 allRois = roiGroup.rois;
-scanRois = []; scanRoiNums = []; roiNames = [];
+roiMetadata = [];
+scanRoiNums = [];
 nRois = numel(allRois);
 for iRoi = 1:nRois
-    currRoiName = allRois(iRoi).scanfields.shortDescription;
-    roiNames{iRoi} = currRoiName;
-    roiDurs(iRoi) = allRois(iRoi).scanfields.duration;
-    roiDursSamples(iRoi) = floor(roiDurs(iRoi) * sampRate);
+    currRoi = allRois(iRoi);
+    currRoiName = currRoi.scanfields.shortDescription;
+    currRoiDur = currRoi.scanfields.duration;
+    
+    roiMetadata.name{iRoi} = currRoiName;
+    roiMetadata.zDepth(iRoi) = currRoi.zs;
+    roiMetadata.duration(iRoi) = currRoiDur;
+    roiMetadata.durationInSamples(iRoi) = floor(currRoiDur * sampRate);
+    roiMetadata.centerXY(iRoi, :) = currRoi.scanfields.centerXY;
+    roiMetadata.sizeXY(iRoi, :) = currRoi.scanfields.sizeXY;
+    roiMetadata.stimParams{iRoi} = currRoi.scanfields.stimparams;
+    roiMetadata.transformParams(iRoi) = currRoi.scanfields.transformParams;
+    
     if ~strcmp(currRoiName(7:end), 'pause') && ...
                 ~strcmp(currRoiName(7:end), 'park')
         scanRoiNums(end + 1) = iRoi;
     end
 end
+roiMetadata.scanRoiNums = scanRoiNums;
 scanRois = allRois(scanRoiNums);
 
 % Extract fluorescence data averaged across each ROI
@@ -55,12 +66,12 @@ for iFile = 1:nFiles
         if iRoi == 1
             startSample = 1;
         else
-            startSample = sum(roiDursSamples(1:iRoi-1));
+            startSample = sum(roiMetadata.durationInSamples(1:iRoi-1));
         end
-        if iRoi == numel(roiDurs)
+        if iRoi == numel(roiMetadata.duration)
             endSample = nSamples;
         else
-            endSample = sum(roiDursSamples(1:iRoi));
+            endSample = sum(roiMetadata.durationInSamples(1:iRoi));
         end
         currRoiDataAvg(:, iRoi) = squeeze(mean(pmtData(startSample:endSample, :, :), 1)); % --> [cycle, ROI]
     end
@@ -78,8 +89,8 @@ disp(['Total cycles = ' num2str(nCyclesTotal)])
 disp(['Cycle counts = ', num2str(cycleCounts)])
 
 % Save data for easy access
-save(fullfile(parentDir, [baseFileName, '_SI_data']), 'header', 'roiGroup', 'nFiles', 'cycleCounts', ...
-        'roiDataAvg', 'scanRoiNums', 'roiNames', 'roiDurs');
+save(fullfile(parentDir, [baseFileName, '_SI_data']), 'header', 'nFiles', 'cycleCounts', ...
+        'roiDataAvg', 'roiMetadata');
          
 catch ME
     rethrow(ME); 
