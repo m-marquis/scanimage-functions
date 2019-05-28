@@ -109,40 +109,25 @@ end
 %% LOAD DATA FROM EXISTING FILE
 
 [fileName, pathName] = uigetfile(fullfile(parentDir, '*_SI_data.mat'));
-expData = load(fullfile(pathName, fileName), 'cycleCounts', 'nFiles', 'header', 'roiDataAvg', ...
-        'scanRoiNums', 'roiNames', 'roiDurs');
+load(fullfile(pathName, fileName), 'cycleCounts', 'nFiles', 'header', 'roiDataAvg', ...
+        'roiMetadata');
 
-%%
+stimRoiData = roiDataAvg(:, roiMetadata.scanRoiNums(1));
+ctrlRoiData = roiDataAvg(:, roiMetadata.scanRoiNums(2));
 
-f = figure; hold on
+%% Plot fluorescence from photostim/control ROIs 
+
+f = figure(1);clf; hold on
 nCyclesTotal = size(roiDataAvg, 1);
 xData = header.frameDuration:header.frameDuration:(header.frameDuration * nCyclesTotal);
 plot(stimRoiData, 'Color', 'r');
 plot(ctrlRoiData, 'Color', 'b');
-% figure;
-% plot([xData', xData'], squeeze(imgRoiData(:,currTrial, :)));
+legend('Photostim', 'Control', 'autoupdate', 'off')
 
-% %% Identify the frames when the laser stim turned on and off
-% 
-% stimPeakData = [0; abs(diff(stimRoiData))];
-% ctrlPeakData = [0; abs(diff(ctrlRoiData))];
-% 
-% peakData = stimPeakData;
-% 
-% % Figure out what threshold to use for finding stim peaks
-% figure; plot(peakData);
-% peakDataSort = sort(ctrlPeakData);
-% [~, maxJump] = max(diff(peakDataSort));
-% stimPeakThresh = peakDataSort(maxJump) + 1;
-% 
-% % Use threshold to identify stim onset/offset cycles
-% stimOnOffCycles = find(peakData > stimPeakThresh);
-% stimOnCycles = stimOnOffCycles(1:2:end);
-% stimOffCycles = stimOnOffCycles(2:2:end);
+%% FIND STIM ON/OFF CYCLES
 
-%% ALTERNATE METHOD TO FIND STIM ON/OFF CYCLES
+manualThresh = 930;
 
-manualThresh = 911;
 stimCycles = stimRoiData > manualThresh;
 stimCyclesStr = regexprep(num2str(stimCycles'), ' ', '');
 stimOnCycles = regexp(stimCyclesStr, '(?<=0)1');
@@ -156,11 +141,11 @@ stimOffXData = xData(stimOffCycles);
 plot(stimOnCycles, ones(numel(stimOnCycles)) * yVal, 'o', 'color', 'g')
 plot(stimOffCycles, ones(numel(stimOffCycles)) * yVal, '*', 'color', 'm')
 
-%% Divide data into trials
+%% DIVIDE DATA INTO TRIALS
 
 % Check stim durations
 stimCycleDurs = stimOffCycles - stimOnCycles
-interCycleDurs = [stimOnCycles(1), stimOnCycles(2:end) - stimOffCycles(1:end-1), ...
+interStimDurs = [stimOnCycles(1), stimOnCycles(2:end) - stimOffCycles(1:end-1), ...
         nCyclesTotal - stimOffCycles(end)]
     
 skipCycles = [2];
