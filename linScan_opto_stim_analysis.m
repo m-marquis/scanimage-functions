@@ -1,6 +1,6 @@
 
 
-parentDir = 'E:\Michael\2019_05_24_exp_1';
+parentDir = 'D:\Dropbox (HMS)\2P Data\Imaging Data\2019_05_24_exp_1';
 
 
 %% PROCESS RAW DATA
@@ -79,13 +79,13 @@ disp(['Cycle counts = ', num2str(cycleCounts)])
 
 % Save data for easy access
 save(fullfile(parentDir, [baseFileName, '_SI_data']), 'header', 'roiGroup', 'nFiles', 'cycleCounts', ...
-        'roiDataAvg');
+        'roiDataAvg', 'scanRoiNums', 'roiNames', 'roiDurs');
          
 catch ME
     rethrow(ME); 
 end
 
-%% Load any high-res stacks for ROI creation and save averaged versions
+%% Load any high-res stacks used for ROI creation and save averaged versions
 tifs = dir(fullfile(parentDir, '*stack*.tif'));
 for iFile = 1:numel(tifs)
     disp(['Reading tif stack #', num2str(iFile)])
@@ -97,11 +97,14 @@ end
 
 %% LOAD DATA FROM EXISTING FILE
 
-fileName = uigetfile(fullfile(parentDir, '*_SI_data.mat'));
+[fileName, pathName] = uigetfile(fullfile(parentDir, '*_SI_data.mat'));
+expData = load(fullfile(pathName, fileName), 'cycleCounts', 'nFiles', 'header', 'roiDataAvg', ...
+        'scanRoiNums', 'roiNames', 'roiDurs');
 
 %%
 
 f = figure; hold on
+nCyclesTotal = size(roiDataAvg, 1);
 xData = header.frameDuration:header.frameDuration:(header.frameDuration * nCyclesTotal);
 plot(stimRoiData, 'Color', 'r');
 plot(ctrlRoiData, 'Color', 'b');
