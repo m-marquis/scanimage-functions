@@ -1,18 +1,40 @@
 
 
-parentDir = 'D:\Dropbox (HMS)\2P Data\Imaging Data\2019_05_24_exp_1';
+% parentDir = 'D:\Dropbox (HMS)\2P Data\Imaging Data\2019_05_25_exp_1';
+parentDir = 'E:\Michael\2019_05_25_exp_1';
 
-
-%% PROCESS RAW DATA
+%% PROCESS RAW DATA FOR ALL BLOCKS
 
 try
-fileName = uigetfile(fullfile(parentDir, '*_00001.meta.txt'));
-baseFileName = regexp(fileName, '.*(?=_00001.meta.txt)', 'match');
-baseFileName = baseFileName{:};
+    
+metadataFiles = dir(fullfile(parentDir, '*_00001.meta.txt'));
+nBlocks = numel(metadataFiles);
 
-% Figure out how many trials there are
-allFiles = dir(fullfile(parentDir, [baseFileName, '*.pmt.dat']));
-nFiles = numel(allFiles);
+for iFile = 1:nFiles
+    
+    % Get current file names
+    currMetaFileName = metadataFiles(iFile).name;
+    baseFileName = regexp(currMetaFileName, '.*(?=_00001.meta.txt)', 'match');
+    baseFileName = baseFileName{:};
+    refImgFileName = [baseFileName, '_00001.ref.dat'];
+    
+    % Figure out how many files the data was split into for this block
+    currDataFiles = dir(fullfile(parentDir, [baseFileName, '*.pmt.dat']));
+    nDataFiles = numel(currDataFiles);
+    
+    % Load metadata and roiGroup data for this block
+    blockFileStem = regexprep(currMetaFileName, '.meta.txt', '');
+    [siData, ~, ~, roiGroup] = scanimage.util.readLineScanDataFiles_MM(blockFileStem);
+    
+    % Fix reference image file extension and load that data as well
+    newRefImgFileName = regexprep(refImgFileName, '.ref.dat', 'mat');
+    copyfile(fullfile(parentDir, refImgFileName), fullfile(parentDir, newRefImgFileName));
+    refImgData = load(fullfile(parentDir, newRefImgFileName));        
+    
+    
+    
+end
+
 
 % Load data
 metadataFileName = fullfile(parentDir,[baseFileName, '_00001']);
@@ -103,7 +125,13 @@ for iFile = 1:numel(tifs)
    [header, aout] = opentif(fullfile(parentDir, tifs(iFile).name));
    tifData = squeeze(mean(aout, 6)); % --> [y, x, slice]
    saveFile = fullfile(parentDir, ['avg_', tifs(iFile).name, 'f']);
+   try
    saveastiff(uint32(tifData), saveFile);
+   catch
+   end
+   
+   % Save a .mat version too, with metadata
+   save(fullfile(regexprep(saveFile, '.tiff', '.mat')), 'tifData', 'header', '-v7.3')
 end
 
 %% LOAD DATA FROM EXISTING FILE
@@ -124,7 +152,7 @@ plot(stimRoiData, 'Color', 'r');
 plot(ctrlRoiData, 'Color', 'b');
 legend('Photostim', 'Control', 'autoupdate', 'off')
 
-%% FIND STIM ON/OFF CYCLES
+% FIND STIM ON/OFF CYCLES
 
 manualThresh = 930;
 
@@ -140,6 +168,46 @@ stimOnXData = xData(stimOnCycles);
 stimOffXData = xData(stimOffCycles);
 plot(stimOnCycles, ones(numel(stimOnCycles)) * yVal, 'o', 'color', 'g')
 plot(stimOffCycles, ones(numel(stimOffCycles)) * yVal, '*', 'color', 'm')
+
+%% LOAD ANATOMY STACK SLICES AND METADATA
+[fileName, filePath] = uigetfile(fullfile(parentDir, '*stack*.mat'));
+
+stackData = load(fullfile(filePath, fileName));
+nSlices = stackData.header.SI.hStackManager.numSlices;
+zStepSize = stackData.header.SI.hStackManager.stackZStepSize;
+zSliceDepth = (0:nSlices - 1) * zStepSize;
+
+roiRefImages = stackData.tifData(:,:,(roiMetadata.zDepth(roiMetadata.scanRoiNums) ./ zStepSize));
+for iPlane = 1:size(roiRefImages, 3)
+    figure(iPlane); clf; 
+    imshow(roiRefImages(:,:,iPlane), [0 2000])
+end
+
+%%
+currRoi =5;
+currRefImage = roiRefImages(:,:,currRoi);
+
+figure(1);clf;hold on
+w = size(currRefImage, 2);
+h = size(currRefImage, 1);
+xPos = [-w/2, w/2];
+yPos = [h/2, -h/2];
+imagesc(xPos, yPos, currRefImage);colormap('gray')
+axis equal
+centerXYRel = roiMetadata.centerXY(roiMetadata.scanRoiNums(currRoi), :);
+sizeXY = roiMetadata.sizeXY(roiMetadata.scanRoiNums(currRoi), :);
+
+conversionFactor = 15/.59;
+centerXpx = centerXYRel(:,1) * conversionFactor;
+centerYpx = centerXYRel(:,2) * (-conversionFactor);
+plot(centerXpx, centerYpx, 'o');
+
+%% LOAD BEHAVIOR DATA
+
+sid = 0;
+annotFileName = 'autoAnnotations.mat';
+annotData = load(fullfile(parentDir, ['sid_', num2str(sid)], annotFileName));
+
 
 %% DIVIDE DATA INTO TRIALS
 
@@ -178,28 +246,6 @@ for iRoi = 1:numel(scanRoiNums)
     plot(movmean(mean(currData, 2), smWin), 'linewidth', 2, 'color', 'k')
     title(num2str(iRoi))
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
