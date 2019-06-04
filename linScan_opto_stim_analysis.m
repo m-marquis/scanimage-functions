@@ -120,11 +120,12 @@ for iBlock = 1:numel(allBlockData)
     end
 end
 
-%% Plot fluorescence from photostim/control ROIs 
+%% IDENTIFY STIM ON- and OFFSETS
+
 currBlock = 9;
 currBlockData = allBlockData([allBlockData.blockNum] == currBlock);
 scanRois = currBlockData.roiMetadata.scanRoiNums;
-roiDataAvg = currBlockData.roiDataAvg;
+roiDataAvg = currBlockData.roiDataAvg - min(currBlockData.roiDataAvg(:)); % Setting min to zero
 stimRoiData = roiDataAvg(:, scanRois(1));
 ctrlRoiData = roiDataAvg(:, scanRois(2));
 siData = currBlockData.siData;
@@ -138,7 +139,7 @@ plot(ctrlRoiData, 'Color', 'b');
 legend('Photostim', 'Control', 'autoupdate', 'off')
 
 % FIND STIM ON/OFF CYCLES
-manualThresh = 930;
+manualThresh = 30;
 
 stimCycles = stimRoiData > manualThresh;
 stimCyclesStr = regexprep(num2str(stimCycles'), ' ', '');
@@ -146,7 +147,7 @@ stimOnCycles = regexp(stimCyclesStr, '(?<=0)1');
 stimOffCycles = regexp(stimCyclesStr, '(?<=1)0');
 
 % Plot to verify that they're correct
-yVal = 911;
+yVal = 11;
 figure(f);
 stimOnXData = xData(stimOnCycles);
 stimOffXData = xData(stimOffCycles);
@@ -154,9 +155,7 @@ plot(stimOnCycles, ones(numel(stimOnCycles)) * yVal, 'o', 'color', 'g')
 plot(stimOffCycles, ones(numel(stimOffCycles)) * yVal, '*', 'color', 'm')
 
 
-
-
-% DIVIDE DATA INTO INDIVIDUAL STIM EPOCHS
+%% DIVIDE DATA INTO INDIVIDUAL STIM EPOCHS
 
 % Check stim durations
 stimCycleDurs = stimOffCycles - stimOnCycles
@@ -164,46 +163,105 @@ interStimDurs = [stimOnCycles(1), stimOnCycles(2:end) - stimOffCycles(1:end-1), 
         nCyclesTotal - stimOffCycles(end)]
     
 skipCycles = [];
-analysisWindow = 25;
+analysisWindow = [50 50];
+targetStimDur = 20;
 smWin = 3;
 
-maxStimDur = max(stimCycleDurs);
+if ~isempty(skipCycles)
+   stimOnCycles(skipCycles) = [];
+   stimOffCycles(skipCycles) = [];
+   stimCycleDurs(skipCycles) = [];
+end
+
+% maxStimDur = max(stimCycleDurs);
 scanRoiNums = currBlockData.roiMetadata.scanRoiNums;
 
 % Identify analysis cycles for each stim
 analysisStartCycles = []; analysisEndCycles = [];
 for iStim = 1:numel(stimCycleDurs)
-   if ~ismember(iStim, skipCycles)
-       analysisStartCycles(end + 1) = stimOnCycles(iStim) - analysisWindow;
-       analysisEndCycles(end + 1) = stimOffCycles(iStim) + analysisWindow - 1 + (maxStimDur - stimCycleDurs(iStim));
-   end
+%    if ~ismember(iStim, skipCycles)
+       analysisStartCycles(end + 1) = stimOnCycles(iStim) - analysisWindow(1);
+       analysisEndCycles(end + 1) = stimOffCycles(iStim) + analysisWindow(2) - 1 + ...
+            (targetStimDur - stimCycleDurs(iStim));
+%    end
 end
 analysisStartCycles(analysisStartCycles < 1) = 1;
 analysisEndCycles(analysisEndCycles > nCyclesTotal) = nCyclesTotal;
-analysisWinSize = max(analysisEndCycles - analysisStartCycles);
+analysisWinSize = max(analysisEndCycles - analysisStartCycles) + 1;
+
+% Identify the behavior frames corresponding to the analysis cycles
+currAnnotData = currBlockData.annotData.trialAnnotations;
+currAnnotData(1,:) = currAnnotData(2,:); % To get rid of empty frame at the start of each trial
+rsAnnotData = currAnnotData(:);
+rsFtData = [];
+rsFtData(:,1) = currBlockData.annotData.ftData.moveSpeed(:);
+rsFtData(:,2) = currBlockData.annotData.ftData.yawSpeed(:);
+cyc2frame = sample_lookup(FRAME_RATE, currBlockData.cycleRate);
+stimOnFrames = cyc2frame.convert(stimOnCycles);
+stimOffFrames = cyc2frame.convert(stimOffCycles);
+stimFrameDurs = stimOffFrames - stimOnFrames;
+analysisWindowFrames = cyc2frame.convert(analysisWindow);
+analysisStartFrames = []; analysisEndFrames = [];
+for iStim = 1:numel(stimFrameDurs)
+    analysisStartFrames(end + 1) = stimOnFrames(iStim) - analysisWindowFrames(1);
+    analysisEndFrames(end + 1) = stimOffFrames(iStim) + analysisWindowFrames(2) - 1 + ...
+            (cyc2frame.convert(targetStimDur) - stimFrameDurs(iStim));
+end
+analysisStartFrames(analysisStartFrames < 1) = 1;
+analysisEndFrames(analysisEndFrames > numel(rsAnnotData)) = numel(rsAnnotData);
+test = max(analysisEndFrames - analysisStartFrames) + 1;
 
 % Extract and compile data from analysis windows
-allStimData = [];
+allStimFlData = []; allStimAnnotData = []; allStimFtData = [];
 for iStim = 1:numel(analysisStartCycles)
+    
+    % GCaMP data
     currStimData = roiDataAvg(analysisStartCycles(iStim):analysisEndCycles(iStim), ...
             scanRoiNums); % --> [cycle, stim, roi]
     preStimCycles = stimOnCycles(iStim) - analysisStartCycles(iStim);
     postStimCycles = analysisEndCycles(iStim) - stimOffCycles(iStim) - ...
-            (maxStimDur - stimCycleDurs(iStim)) + 1;
-    if preStimCycles < analysisWindow
-       currStimData = cat(1, nan(analysisWindow - preStimCycles, size(currStimData, 2)), ...
+            (targetStimDur - stimCycleDurs(iStim)) + 1;        
+    if preStimCycles < analysisWindow(1)
+       currStimData = cat(1, nan(analysisWindow(1) - preStimCycles, size(currStimData, 2)), ...
                 currStimData);
     end
-    if postStimCycles < analysisWindow
-       currStimData = cat(1, currStimData, nan(analysisWindow - postStimCycles, ...
+    if postStimCycles < analysisWindow(2)
+       currStimData = cat(1, currStimData, nan(analysisWindow(2) - postStimCycles, ...
                 size(currStimData, 2)));  
     end
-    allStimData = cat(3, allStimData, currStimData); % --> [cycle, roi, stim]
-end
-allStimData = permute(allStimData, [1 3 2]); % --> [cycle, stim, roi]
+    allStimFlData = cat(3, allStimFlData, currStimData); % --> [cycle, roi, stim]
+    
+    % Behavior data
+    currAnnotData = rsAnnotData(analysisStartFrames(iStim):analysisEndFrames(iStim));
+    currFtData = rsFtData(analysisStartFrames(iStim):analysisEndFrames(iStim), :); % -->[frame, var]
+    preStimFrames = stimOnFrames(iStim) - analysisStartFrames(iStim);
+    postStimFrames = analysisEndFrames(iStim) - stimOffFrames(iStim) - ...
+            (cyc2frame.convert(targetStimDur) - stimFrameDurs(iStim)) + 1;
+    if preStimFrames < cyc2frame.convert(analysisWindow(1))
+        currAnnotData = [nan(cyc2frame.convert(analysisWindow(1)) - preStimFrames, 1); ...
+                currAnnotData];
+        currFtData = cat(1, nan(cyc2frame.convert(analysisWindow(1)) - preStimFrames, ...
+            size(currFtData, 2)), currAnnotData);
+    end
+    if postStimFrames < cyc2frame.convert(analysisWindow(2))
+        currAnnotData = [currAnnotData; nan(cyc2frame.convert(analysisWindow(2)) ...
+                - postStimFrames, 1)];
+        currFtData = cat(1, currFtData, nan(cyc2frame.convert(analysisWindow(1)) - preStimFrames, ...
+                size(currFtData, 2)));     
+    end
+    allStimAnnotData(:, iStim) = currAnnotData;
+    allStimFtData = cat(3, allStimFtData, currFtData); % --> [frame, var, stim]
+
+end% iStim
+allStimFlData = permute(allStimFlData, [1 3 2]); % --> [cycle, stim, roi]
+allStimFtData = permute(allStimFtData, [1 3 2]); % --> [frame, stim, var]
+
+%% PLOT AVERAGED FLUORESCENCE OVERLAYS
+
+saveFig = 0;
 
 % Set up figure
-nPlots = size(allStimData, 3);
+nPlots = size(allStimFlData, 3);
 if nPlots == 3
     plotLayout = [2 2];
 else
@@ -214,16 +272,40 @@ f.Color = [1 1 1];
 f.Position = [-1500 50 1500 800];
 
 % Plot ref images and rois
-xData = (1/currBlockData.cycleRate):(1/currBlockData.cycleRate):size(allStimData, 1) ...
+xData = (1/currBlockData.cycleRate):(1/currBlockData.cycleRate):size(allStimFlData, 1) ...
         / currBlockData.cycleRate;
 for iRoi = 1:nPlots
-    subaxis(plotLayout(1), plotLayout(2), iRoi, 'sh', 0.05, 'sv', 0.1, 'm', 0.07); hold on
-    currData = allStimData(:,:,iRoi); % --> [cycle, stim]
-    plot(xData, smoothdata(currData, 1, 'gaussian', smWin, 'includenan'))
-    plot(xData, smoothdata(mean(currData, 2, 'omitnan'), 1, 'gaussian', smWin), 'linewidth', 2, 'color', 'k')
+    ax = subaxis(plotLayout(1), plotLayout(2), iRoi, 'sh', 0.05, 'sv', 0.1, 'm', 0.07); hold on
+    currData = allStimFlData(:,:,iRoi); % --> [cycle, stim]
+    ax = plot_ROI_data(ax, currData, 'stdDevShading', true, 'volOffset', -analysisWindow(1), ...
+                    'singleTrialAlpha', 0.5, 'VolumeRate', currBlockData.cycleRate, ...
+                    'YAxisLabel', 'Raw F', 'OutlierSD', 1000);
     title(currBlockData.roiNames{iRoi})
     xlabel('Time (sec)')
     ylabel('Raw fluorescence (AU)')
 end
 
-save_figure(f, parentDir, ['Block_', num2str(currBlockData.blockNum), '_fl'])
+if saveFig
+    save_figure(f, parentDir, ['Block_', num2str(currBlockData.blockNum), '_fl'])
+end
+
+%% CREATE 2D PLOTS OF BEHAVIOR AND GCaMP DATA
+
+saveFig = 0;
+
+infoStruct = []; 
+infoStruct.expDate = '';
+infoStruct.trialDuration
+
+
+
+
+
+
+
+
+
+
+
+
+
