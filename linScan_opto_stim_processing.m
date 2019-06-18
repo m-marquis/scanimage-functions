@@ -72,7 +72,7 @@ try
     roiMetadata.scanRoiNums = scanRoiNums;
     roiMetadata.scanRois = roiMetadata.allRois(scanRoiNums);
     roiMetadata.refImgStack = refImgStack;
-    roiMetadata.refimgCP = refImgCP;
+    roiMetadata.refImgCP = refImgCP;
     roiMetadata.refImgZs = refImgZs;
     
     % Extract fluorescence data averaged across each ROI
