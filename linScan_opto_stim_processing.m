@@ -1,7 +1,7 @@
 
 
 % parentDir = 'D:\Dropbox (HMS)\2P Data\Imaging Data\2019_05_25_exp_1';
-parentDir = 'E:\Michael\2019_06_10_exp_1';
+parentDir = 'E:\Michael\2019_07_02_exp_1';
 
 %% PROCESS RAW DATA FOR ALL BLOCKS
     
