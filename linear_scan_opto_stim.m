@@ -6,6 +6,12 @@ function linear_scan_opto_stim(src, event, varargin)
 %
 % Second argument specifies what laser power % to use for the photostimulation (laser power at the 
 %       beginning of the acquisition will be used as the imaging laser power).
+%  
+% Third argument specifies the number of photostim ROIs (defaults to one if you omit this argument). 
+% For each stim ROI, the ROI immediately after that is assumed to be the cognate control ROI. For
+% example, if you pass [2] as this argument, ROIs 1 and 3 will be photostims and ROIs 2 and 4 will 
+% be the corresponding control ROIs.
+disp('Function called')
 
 hSI = src.hSI;
 
@@ -14,29 +20,39 @@ switch event.EventName
     case 'acqModeStart'
         try
             disp('Starting grab')
-            
+
             % Get handles for stimulus and control ROIs
             allRois = hSI.hRoiManager.roiGroupLineScan;
             scanRois = []; scanRoiNums = [];
             for iRoi = 1:numel(allRois.rois)
                 currRoiName = allRois.rois(iRoi).scanfields.shortDescription;
                 if ~strcmp(currRoiName(7:end), 'pause') && ...
-                            ~strcmp(currRoiName(7:end), 'park')
+                        ~strcmp(currRoiName(7:end), 'park')
                     scanRoiNums(end + 1) = iRoi;
                 end
             end
             scanRois = allRois.rois(scanRoiNums);
-            hStimRoi = scanRois(1).scanfields;
-            hControlRoi = scanRois(2).scanfields;
-            hImageRois = scanRois(3:end);
+            if numel(vargin) > 2
+                nStimRois = vargin{3};
+            else
+                nStimRois = 1;
+            end
+            for iStimRoi = 1:nStimRois
+                currRoiNum = (2 * iStimRoi) - 1;
+                hStimRois(iStimRoi) = scanRois(currRoiNum).scanfields;
+                hControlRois(iStimRoi) = scanRois(currRoiNum + 1).scanfields;
+            end
+            hImageRois = scanRois((2 * nStimRois) + 1:end);
             
             % Setup laser power as acquisition starts
             hSI.extCustomProps.stimROIPower = varargin{2}; % Get stim power
             hSI.extCustomProps.nFramesAcq = 0;
             hSI.hBeams.beamsOff();
             hSI.extCustomProps.stimOn = 0;
-            hStimRoi.powers = 0.1;
-            hControlRoi.powers = hSI.extCustomProps.stimROIPower;
+            for iStimRoi = 1:nStimRois
+            hStimRois(iStimRoi).powers = 0.1;
+            hControlRois(iStimRoi).powers = hSI.extCustomProps.stimROIPower;
+            end
             for iRoi = 1:numel(hImageRois)
                 hImageRois(iRoi).scanfields.powers = hSI.extCustomProps.imagingPower;
             end
@@ -135,8 +151,16 @@ switch event.EventName
                 end
             end
             scanRois = allRois(scanRoiNums);
-            hStimRoi = scanRois(1).scanfields;
-            hControlRoi = scanRois(2).scanfields;
+            if numel(vargin) > 2
+                nStimRois = vargin{3};
+            else
+                nStimRois = 1;
+            end
+            for iStimRoi = 1:nStimRois
+                currRoiNum = (2 * iStimRoi) - 1;
+                hStimRois(iStimRoi) = scanRois(currRoiNum).scanfields;
+                hControlRois(iStimRoi) = scanRois(currRoiNum + 1).scanfields;
+            end
             
             % Get current internal frame count
             currCycleCount = hSI.hScan2D.hAcq.frameCounter;
@@ -147,14 +171,16 @@ switch event.EventName
             if ~isempty(nextStimStartCycle)
                 if currCycleCount >= nextStimEndCycle
                     
-                    % Switch laser to control ROI
+                    % Switch laser to control ROIs
                     hSI.extCustomProps.pendingStimEndCycles = ...
-                            hSI.extCustomProps.pendingStimEndCycles(2:end);
-                    hStimRoi.powers = 0.3;
-                    hControlRoi.powers = hSI.extCustomProps.stimROIPower;
+                        hSI.extCustomProps.pendingStimEndCycles(2:end);
+                    for iStimRoi = 1:nStimRois
+                        hStimRois(iStimRoi).powers = 0.3;
+                        hControlRois(iStimRoi).powers = hSI.extCustomProps.stimROIPower;
+                    end
                     hSI.hBeams.updateBeamBufferAsync(true);
                     disp(['Setting laser to ', num2str(hSI.extCustomProps.stimROIPower), ...
-                            '% power in control ROI'])
+                            '% power in control ROIs'])
                     
                     %  disp(['Stim switched to control ROI in ', num2str(toc, 2), ' sec'])
                     
@@ -163,11 +189,13 @@ switch event.EventName
                     % Switch laser to stim ROI
                     hSI.extCustomProps.pendingStimStartCycles = ...
                             hSI.extCustomProps.pendingStimStartCycles(2:end);
-                    hStimRoi.powers = hSI.extCustomProps.stimROIPower;
-                    hControlRoi.powers = 0.3;
+                    for iStimRoi = 1:nStimRois
+                        hStimRois(iStimRoi).powers = hSI.extCustomProps.stimROIPower;0.3;
+                        hControlRois(iStimRoi).powers = 
+                    end
                     hSI.hBeams.updateBeamBufferAsync(true);
                     disp(['Setting laser to ', num2str(hSI.extCustomProps.stimROIPower), ...
-                            '% power in stim ROI'])
+                            '% power in stim ROIs'])
                     
                     % disp(['Stim switched to stim ROI in ', num2str(toc, 2), ' sec'])
                     
