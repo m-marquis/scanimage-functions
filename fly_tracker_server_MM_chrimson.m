@@ -64,10 +64,11 @@ while 1
     % Start acquisitions
     pause(1.0);
     hSI.startGrab();
-    
+    disp('Grab started');
     % Signal back to the fly tracker client that it can start daq and image
     % acquisition.
     fprintf(t, 'SI51_Acq_1');
+    disp('Printed ready signal to server');
 end
 
 % Clean up
