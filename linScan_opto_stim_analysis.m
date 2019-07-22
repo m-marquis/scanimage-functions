@@ -1,6 +1,6 @@
 
 
-expDate = '2019_07_19_exp_2';
+expDate = '2019_07_17_exp_1';
 sid = 0;
 
 parentDir = fullfile('D:\Dropbox (HMS)\2P Data\Imaging Data\', expDate);
@@ -64,7 +64,7 @@ end
 catch foldME; rethrow(foldME); end
 %% PLOT ROI BOUNDS ON THEIR REFERENCE IMAGES
 
-saveFig = 1;
+saveFig = 0;
 
 try
 for iBlock = 1:numel(allBlockData)
@@ -111,8 +111,9 @@ for iBlock = 1:numel(allBlockData)
             if scanRoiZs(iRoi) == refImgZs(iSlice)
                 currRoi = roiMetadata.scanRois(iRoi);
                 roiCenter = [currRoi.centerX, currRoi.centerY];
-                roiSize = mean([currRoi.sizeX, currRoi.sizeY])/2;
-                viscircles(roiCenter, roiSize, 'color', cm(iRoi, :));
+                roiStartPos = roiCenter - ([currRoi.sizeX, currRoi.sizeY]/2) 
+                rectangle('position', [roiStartPos, currRoi.sizeX, currRoi.sizeY], ...
+                        'edgecolor', cm(iRoi, :), 'linewidth', 2);
                 titleStr = [titleStr, ' — ', allBlockData(iBlock).roiNames{iRoi}, ' (', ...
                         num2str(iRoi), ')'];
             end
