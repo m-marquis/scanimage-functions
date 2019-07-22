@@ -1,7 +1,10 @@
 
 
 % parentDir = 'D:\Dropbox (HMS)\2P Data\Imaging Data\2019_05_25_exp_1';
-parentDir = 'E:\Michael\2019_06_10_exp_1';
+parentDir = 'E:\Michael\2019_07_17_exp_1';
+
+
+stackNums = [1 1 1 1 2 2 2];
 
 %% PROCESS RAW DATA FOR ALL BLOCKS
     
@@ -34,11 +37,14 @@ try
     
     % Process ref image data into a more convenient form
     roiPlanes = ismember(refImgData.contextImageZs{end}, roiGroup.zs);
-    refImgCells = [refImgData.contextImageImgs{end}{roiPlanes}];
-    refImgStack = [];
-    for iPlane = 1:numel(refImgCells)
-        refImgStack = cat(3, refImgStack, refImgCells{iPlane}{1}'); % --> [y, x, slice]
-    end
+%     refImgCells = [refImgData.contextImageImgs{end}{roiPlanes}];
+%     refImgStack = [];
+%     for iPlane = 1:numel(refImgCells)
+%         refImgStack = cat(3, refImgStack, refImgCells{iPlane}{1}'); % --> [y, x, slice]
+%     end
+    load(fullfile(parentDir, ['avg_Stack_0000', num2str(stackNums(iBlock)), '.mat']));
+    refImgStack = tifData(:,:,roiPlanes);
+    
     refImgCP = refImgData.contextImageRoiCPs{end}{1}{1};
     refImgZs = refImgData.contextImageZs{end}(roiPlanes);
     
@@ -63,6 +69,7 @@ try
         roiMetadata.allRois(iRoi).sizeY = currRoi.scanfields.sizeXY(2);
         roiMetadata.allRois(iRoi).stimParams = currRoi.scanfields.stimparams;
         roiMetadata.allRois(iRoi).transformParams = currRoi.scanfields.transformParams;
+%         roiMetadata.allRois(iRoi).refImg = roiMetadata.refImgStack(:,:,refImgData.contextImageZs{end} == roiMetadata.allRois(iRoi).zDepth);
         
         if ~strcmp(currRoiName(7:end), 'pause') && ...
                 ~strcmp(currRoiName(7:end), 'park')
@@ -76,7 +83,7 @@ try
     roiMetadata.refImgZs = refImgZs;
     
     % Extract fluorescence data averaged across each ROI
-    roiDataAvg = []; cycleCounts = [];
+    roiDataAvg = []; cycleCounts = []; allPmtData = [];
     for iFile = 1:nDataFiles
         
         % Load data for current file
@@ -85,7 +92,7 @@ try
                 pad(num2str(iFile), 5, 'left', '0')]);
         [~, pmtData, ~, ~] = scanimage.util.readLineScanDataFiles_MM(currBaseFileName, ... 
                 fullfile(parentDir, regexprep(currMetaFileName, '.meta.txt', '')));
-        
+                    
         cycleCounts(end + 1) = size(pmtData, 3);
         
         % Separate PMT data from current file
@@ -110,10 +117,7 @@ try
     
     % Separate actual ROIs from pauses and parks
     stimRoiData = roiDataAvg(:,scanRoiNums(1));       % --> [cycle]
-    ctrlRoiData = roiDataAvg(:,scanRoiNums(2));       % --> [cycle]
-    imgCtrlRoiData = roiDataAvg(:,scanRoiNums(3));    % --> [cycle]
-    imgRoiData = roiDataAvg(:,scanRoiNums(4:end));    % --> [cycle, ROI]
-    
+
     nCyclesTotal = numel(stimRoiData);
     disp(['Total cycles = ' num2str(nCyclesTotal)])
     disp(['Cycle counts = ', num2str(cycleCounts)])
