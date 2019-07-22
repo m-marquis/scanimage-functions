@@ -1,6 +1,6 @@
 
 
-expDate = '2019_06_14_exp_1';
+expDate = '2019_07_19_exp_2';
 sid = 0;
 
 parentDir = fullfile('D:\Dropbox (HMS)\2P Data\Imaging Data\', expDate);
@@ -13,12 +13,25 @@ saveDateStr = [saveDateStr, '-', expDate(end)];
 
 %% LOAD DATA FROM ALL BLOCKS
 
-roiNames(1) = repmat({["stim", "stimCtrl", "TypeF", "imgCtrl"]}, 1, 1);
-roiNames(2) = repmat({["stim", "stimCtrl", "PPM2soma-1", "PPM2soma-2"]}, 1, 1);
-roiNames(3:5) = repmat({["stim", "stimCtrl", "TypeF", "imgCtrl"]}, 1, 3);
-roiNames(6:10) = repmat({["stim", "stimCtrl", "TypeF", "imgCtrl"]}, 1, 5);
+clear roiNames;
 
-odorStimRelTimes = {[], [], [], [], [], [], [], [], [], []};
+roiNames(1) = {["stim", "stimCtrl", "Img-1"]};
+roiNames(2) = {["stim", "stimCtrl", "Img-1"]};
+roiNames(3) = {["stim", "stimCtrl", "Img-1"]};
+roiNames(4) = {["stim", "stimCtrl", "Img-1"]};
+roiNames(5) = {["stim", "stimCtrl", "Img-1"]};
+roiNames(6) = {["stim", "stimCtrl", "Img-1"]};
+% roiNames(7) = {["stim", "stimCtrl", "PLP"]};
+% roiNames(8) = {["stim", "stimCtrl", "PLP"]};
+% roiNames(9) = {["stim", "stimCtrl", "NA", "NA"]};
+% roiNames(10) = {["stim", "stimCtrl", "NA", "NA"]};
+% roiNames(11) = {["stim", "stimCtrl", "NA", "NA"]};
+% roiNames(12) = {["stim", "stimCtrl", "TypeF", "TypeF-2"]};
+% roiNames(13) = {["stim", "stimCtrl", "SMP", "PPM2soma"]};
+% roiNames(14) = {["stim", "stimCtrl", "VLP", "VLP-2"]};
+% roiNames(15) = {["stim", "stimCtrl", "TypeF", "TypeF-2"]};
+
+odorStimRelTimes = repmat({[]}, 1, numel(roiNames));
 
 try
     
@@ -26,7 +39,7 @@ if exist(fullfile(parentDir, ['sid_', num2str(sid)], 'allBlockData.mat'), 'file'
     load(fullfile(parentDir, ['sid_', num2str(sid)], 'allBlockData.mat'))
     disp('Loaded existing block data file')
 else
-    blockDataFiles = dir(fullfile(parentDir, '*_SI_data.mat'));
+    blockDataFiles = dir(fullfile(parentDir, ['*sid_', num2str(sid), '*_SI_data.mat']));
     nBlocks = numel(blockDataFiles);
     clear allBlockData;
     for iBlock = 1:nBlocks
@@ -80,6 +93,7 @@ for iBlock = 1:numel(allBlockData)
     f = figure(iBlock + 50);clf;
     f.Color = [1 1 1];
     f.Position = [-1600 100 1300 800];
+    f.Name = ['Block ', num2str(currBlock), ' ROIs'];
     
     % Plot ref images and rois
     for iSlice = 1:nPlots
@@ -153,7 +167,7 @@ catch foldME; rethrow(foldME); end
 %% IDENTIFY STIM ON- and OFFSETS
 
 currBlock = 5;
-manualThresh = 10;
+manualThresh = 15;
 
 disp([allBlockData.blockNum])
 
@@ -204,8 +218,8 @@ interStimDurs = [stimOnCycles(1), stimOnCycles(2:end) - stimOffCycles(1:end-1), 
         nCyclesTotal - stimOffCycles(end)]
     
 skipCycles = [];
-analysisWindow = [44];
-targetStimDur = 10;
+analysisWindow = [25];
+targetStimDur = 7;
 smWin = 3;
 
 try
@@ -213,7 +227,6 @@ if ~isempty(skipCycles)
    stimOnCycles(skipCycles) = [];
    stimOffCycles(skipCycles) = [];
    stimCycleDurs(skipCycles) = [];
-   nCyclesTotal = nCyclesTotal - numel(skipCycles);
 end
 
 if numel(analysisWindow) == 1
@@ -307,7 +320,7 @@ disp('Data separated into stim epochs')
 catch foldME; rethrow(foldME); end
 %% PLOT AVERAGED FLUORESCENCE AND MOVE SPEED OVERLAYS
 
-saveFig = 0;
+saveFig = 1;
 
 try
     
@@ -320,12 +333,12 @@ else
 end
 f = figure(101);clf;
 f.Color = [1 1 1];
-f.Position = [-1500 50 1500 800];
+f.Position = [-1500 50 1050 600];
 
 % Plot data
 xData = (1/cycleRate):(1/cycleRate):size(allStimFlData, 1) / cycleRate;
 for iRoi = 1:nPlots
-    ax = subaxis(plotLayout(1), plotLayout(2), iRoi, 'sh', 0.05, 'sv', 0.1, 'm', 0.07); hold on
+    ax = subaxis(plotLayout(1), plotLayout(2), iRoi, 'sh', 0.05, 'sv', 0.13, 'm', 0.07); hold on
     currData = allStimFlData(:,:,iRoi); % --> [cycle, stim]
     plot_ROI_data(ax, currData, 'stdDevShading', true, 'volOffset', -analysisWindow(1), ...
         'singleTrialAlpha', 0.5, 'VolumeRate', cycleRate, ...
@@ -347,18 +360,20 @@ if ismember('annotData', fieldnames(allBlockData))
     smWin = 5;
     f = figure(102);clf
     f.Color = [1 1 1];
-    f.Position = [-1500 50 1000 800];
+    f.Position = [-1500 25 1000 950];
     
     smMoveSpeed = smoothdata(allStimFtData(:,:,1)', 2, 'gaussian', smWin);
     smMoveSpeedNoQui = smMoveSpeed; smMoveSpeedNoQui(allStimAnnotData' ~= 3) = nan;
+    smYawSpeed = smoothdata(allStimFtData(:,:,2)', 2, 'gaussian', smWin);
+    smYawSpeedNoQui = smYawSpeed; smYawSpeedNoQui(allStimAnnotData' ~=3) = nan;
     
     % First plot with quiescence included
-    ax = subaxis(2,1,1, 'sv', 0.15);hold on
+    ax = subaxis(3,1,1, 'sv', 0.15);hold on
     plot(mean(smMoveSpeed, 'omitnan'), ...
         'linewidth', 2, 'color', 'k')
     xlabel('Time (s)')
     ylabel('Movement speed (mm/sec)')
-    title(['Block ', num2str(currBlock), '  —  Average movement speed (quiescence excluded)'])
+    title(['Block ', num2str(currBlock), '  —  Average movement speed (quiescence included)'])
     ax.FontSize = 14;
     ax.Title.FontSize = 12;
     ax.XLabel.FontSize = 14;
@@ -376,7 +391,7 @@ if ismember('annotData', fieldnames(allBlockData))
     end
     
     % Second plot excluding quiescence
-    ax = subaxis(2,1,2);hold on
+    ax = subaxis(3,1,2);hold on
     plot(mean(smMoveSpeedNoQui, 'omitnan'), ...
             'linewidth', 2, 'color', 'k')
     xlabel('Time (s)')
@@ -398,6 +413,29 @@ if ismember('annotData', fieldnames(allBlockData))
         legend(ax.Children(1:2), {'Odor stim', 'Opto stim'});
     end
     
+    % Third plot with yaw speed (excluding quiescence)
+    ax = subaxis(3,1,3);hold on
+    plot(mean(smYawSpeed, 'omitnan'), ...
+            'linewidth', 2, 'color', 'k')
+    xlabel('Time (s)')
+    ylabel('Yaw speed (rad/sec)')
+    title(['Block ', num2str(currBlock), '  —  Average yaw velocity (quiescence excluded)'])
+    ax.FontSize = 14;
+    ax.Title.FontSize = 12;
+    ax.XLabel.FontSize = 14;
+    stimStart = analysisWindowFrames(1);
+    stimEnd = stimStart + cyc2frame.convert(targetStimDur);
+    ax.XTick = (stimStart:FRAME_RATE:(size(smYawSpeed, 2) + stimStart)) - ...
+        (round(stimStart/FRAME_RATE) * FRAME_RATE);
+    ax.XTickLabel = (-round(stimStart/FRAME_RATE)):1:(size(smYawSpeed,2)/FRAME_RATE);
+    plot_stim_shading([stimStart, stimEnd]);
+    legend(ax.Children(1), 'Opto stim');
+    if ~isempty(currBlockData.odorStimRelTimes)
+        odorShadeFrames = stimStart + (currBlockData.odorStimRelTimes * FRAME_RATE);
+        plot_stim_shading(odorShadeFrames, 'Color', [0 1 0])
+        legend(ax.Children(1:2), {'Odor stim', 'Opto stim'});
+    end
+    
     if saveFig
         save_figure(f, saveDir, [saveDateStr, '_avg_moveSpeed_block_', ...
                 num2str(currBlockData.blockNum)])
@@ -407,7 +445,7 @@ end
 catch foldME; rethrow(foldME); end
 %% CREATE 2D PLOTS OF BEHAVIOR AND GCaMP DATA
 
-saveFig = 0;
+saveFig = 1;
 
 try
 if ismember('annotData', fieldnames(allBlockData))
@@ -457,6 +495,7 @@ if ismember('annotData', fieldnames(allBlockData))
     f.Position = [-1050 45 800 700];
     % speedData(speedData > 15) = 15;
     titleStr = ['Block ', num2str(currBlock), '  —  Move Speed (mm/sec)'];
+    speedData(speedData > max(speedData(:) * 0.75)) = max(speedData(:) * 0.75);
     plot_2D_summary(speedData, FRAME_RATE, 'plotAxes', ax, 'titleStr', titleStr);
     hold on
     colorbar
@@ -522,8 +561,9 @@ catch foldME; rethrow(foldME); end
 
 %%
 
-currRoi = 4;
-smWin = 5;
+currRoi = 3;
+ftSmWin = 9;
+flSmWin = 5;
 
 cycleRate = allBlockData(currBlock).cycleRate;
 ftDataLin = as_vector(allStimFtData(:,:,1));
@@ -531,16 +571,27 @@ flDataLin = as_vector(allStimFlData(:,:, currRoi));
 frameX = (1/FRAME_RATE):(1/FRAME_RATE):(numel(ftDataLin)/FRAME_RATE);
 cycleX = (1/cycleRate):(1/cycleRate):(numel(flDataLin)/cycleRate);
 
-ftDataSm = smoothdata(ftDataLin,  1, 'gaussian', smWin);
-flDataSm = smoothdata((flDataLin - min(flDataLin)),  1, 'gaussian', smWin);
+ftDataSm = smoothdata(ftDataLin,  1, 'gaussian', ftSmWin, 'includenan');
+flDataSm = smoothdata((flDataLin - min(flDataLin)),  1, 'gaussian', flSmWin, 'includenan');
 
 ftDataNorm = ftDataSm / max(ftDataSm);
 flDataNorm = flDataSm / max(flDataSm);
 
 figure(1); clf; hold on; ax = gca();
-plot_stim_shading
+stimStartTimes = (analysisWindow(1):sum(analysisWindow) + targetStimDur:numel(flDataLin)) / cycleRate;
+stimEndTimes = stimStartTimes + (targetStimDur / cycleRate);
 plot(frameX, ftDataNorm, 'linewidth', 2);
 plot(cycleX, flDataNorm, 'linewidth', 2);
+plot_stim_shading([stimStartTimes', stimEndTimes'])
+
+% stimStartCycles = analysisWindow(1):sum(analysisWindow) + targetStimDur:numel(flDataLin);
+% stimEndCycles = stimStartCycles + targetStimDur;
+% stimStartFrames = cyc2frame.convert(stimStartCycles);
+% stimEndFrames = cyc2frame.convert(stimEndCycles);
+% plot(ftDataNorm, 'linewidth', 2);
+% plot(cyc2frame.convert(1:numel(flDataNorm)), flDataNorm, 'linewidth', 2);
+% plot_stim_shading([stimStartFrames', stimEndFrames'])
+
 
 
 
