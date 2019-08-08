@@ -1,4 +1,4 @@
-expDate = '2019_08_02_exp_1';
+expDate = '2019_08_05_exp_2';
 sid = 0;
 
 parentDir = fullfile('D:\Dropbox (HMS)\2P Data\Imaging Data\', expDate);
@@ -227,15 +227,15 @@ disp(['stimCycleDurs =  ', num2str(stimCycleDurs)])
 disp(['interStimDurs =  ', num2str(interStimDurs)])
 
 catch foldME; rethrow(foldME); end
-%% DIVIDE DATA INTO INDIVIDUAL STIM EPOCHS
-
-% Check stim durations
-disp(' ')
-disp(['stimCycleDurs = ', num2str(stimCycleDurs)])
-disp(['interStimDurs = ', num2str(interStimDurs)])
+% DIVIDE DATA INTO INDIVIDUAL STIM EPOCHS
+% 
+% % Check stim durations
+% disp(' ')
+% disp(['stimCycleDurs = ', num2str(stimCycleDurs)])
+% disp(['interStimDurs = ', num2str(interStimDurs)])
     
 skipCycles = [];
-analysisWindow = [47];
+analysisWindow = [46];
 targetStimDur = 23;
 smWin = 3;
 
@@ -338,7 +338,7 @@ allStimFtData = permute(allStimFtData, [1 3 2]); % --> [frame, stim, var]
 
 % Update main data structure with this block's info
 allBlockData([allBlockData.blockNum] == currBlock).stimSepData.flData = allStimFlData;
-allBlockData([allBlockData.blockNum] == currBlock).stimSepData.FtData = allStimFtData;
+allBlockData([allBlockData.blockNum] == currBlock).stimSepData.ftData = allStimFtData;
 allBlockData([allBlockData.blockNum] == currBlock).stimSepData.annotData = allStimAnnotData;
 allBlockData([allBlockData.blockNum] == currBlock).stimSepData.stimStart = stimStart;
 allBlockData([allBlockData.blockNum] == currBlock).stimSepData.stimEnd = stimEnd;
@@ -347,7 +347,7 @@ allBlockData([allBlockData.blockNum] == currBlock).stimSepData.stimOffCycles = s
 allBlockData([allBlockData.blockNum] == currBlock).stimSepData.analysisWindow = analysisWindow;
 allBlockData([allBlockData.blockNum] == currBlock).stimSepData.targetStimDur = targetStimDur;
 allBlockData([allBlockData.blockNum] == currBlock).stimSepData.skipCycles = skipCycles;
-
+allBlockData([allBlockData.blockNum] == currBlock).stimSepData.cyc2frame = cyc2frame;
 disp('Data separated into stim epochs')
 
 catch foldME; rethrow(foldME); end

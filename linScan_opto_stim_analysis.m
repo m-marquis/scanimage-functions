@@ -1,6 +1,6 @@
 
 
-expDate = '2019_08_02_exp_1';
+expDate = '2019_08_05_exp_2';
 sid = 0;
 
 parentDir = fullfile('D:\Dropbox (HMS)\2P Data\Imaging Data\', expDate);
@@ -18,7 +18,9 @@ try
 if exist(fullfile(parentDir, ['sid_', num2str(sid)], 'allBlockData.mat'), 'file')
     load(fullfile(parentDir, ['sid_', num2str(sid)], 'allBlockData.mat'))
     disp('Loaded existing block data file')
-    FRAME_RATE = allBlockData.annotData.frameInfo.FRAME_RATE;
+    
+    FRAME_RATE = allBlockData(1).annotData.frameInfo.FRAME_RATE;
+    
 else
     disp('Error: no block data file found!')
 end
@@ -95,16 +97,32 @@ catch foldME; rethrow(foldME); end
 
 %% SELECT CURRENT BLOCK
 
-currBlock = 10
+currBlock = 8;
 
+currBlockData = allBlockData([allBlockData.blockNum] == currBlock);
+allStimFlData = currBlockData.stimSepData.flData;
+allStimFtData = currBlockData.stimSepData.ftData;
+allStimAnnotData = currBlockData.stimSepData.annotData;
+cycleRate = currBlockData.cycleRate;
+cyc2frame = currBlockData.stimSepData.cyc2frame;
+analysisWindow = currBlockData.stimSepData.analysisWindow;
+analysisWindowFrames = cyc2frame.convert(analysisWindow);
+stimStart = currBlockData.stimSepData.stimStart;
+stimEnd = currBlockData.stimSepData.stimEnd;
+stimOnCycles = currBlockData.stimSepData.stimOnCycles;
+stimOffCycles = currBlockData.stimSepData.stimOffCycles;
+targetStimDur = currBlockData.stimSepData.targetStimDur;
+skipCycles = currBlockData.stimSepData.skipCycles;
 
 %% PLOT AVERAGED FLUORESCENCE AND MOVE SPEED OVERLAYS
 
-saveFig = 1;
+saveFig = 0;
 smWin = 3;
 
 try
     
+
+ 
 % GCaMP data
 nPlots = size(allStimFlData, 3);
 if nPlots == 3
@@ -343,9 +361,10 @@ catch foldME; rethrow(foldME); end
 
 %%
 
-groupName = 'SMP stim';
+groupName = 'TypeF stim';
+plotBlocks = [0 1 3 5 7 8]
 % plotBlocks = [0:2:allBlockData(end - 1).blockNum, allBlockData(end - 1).blockNum];
-plotBlocks = 0:2:allBlockData(end - 1).blockNum;
+% plotBlocks = 0:2:allBlockData(end - 1).blockNum;
 
 % groupName = 'TypeF stim';
 % plotBlocks = 1:2:7
@@ -356,13 +375,20 @@ smWin = 5;
 
 plotAnnotData = []; plotFtData = []; plotBlockBounds = 1;
 for iBlock = 1:numel(plotBlocks)
-    plotAnnotData = cat(1, plotAnnotData, allBlockData([allBlockData.blockNum] == plotBlocks(iBlock)).annotData.trialAnnotations');
-    currFtData = smoothdata(allBlockData([allBlockData.blockNum] == plotBlocks(iBlock)).annotData.ftData.moveSpeed' .* ...
-            4.5 .* FRAME_RATE, 2, 'gaussian', smWin);
+    currBlockData = allBlockData([allBlockData.blockNum] == plotBlocks(iBlock)).stimSepData;
+    plotAnnotData = cat(1, plotAnnotData, currBlockData.annotData');
+    currFtData = smoothdata(currBlockData.ftData(:,:,1)' .* 4.5 .* FRAME_RATE, 2, 'gaussian', smWin);
     plotFtData = cat(1, plotFtData, currFtData);
+%     plotAnnotData = cat(1, plotAnnotData, allBlockData([allBlockData.blockNum] == plotBlocks(iBlock)).annotData.trialAnnotations');
+%     currFtData = smoothdata(allBlockData([allBlockData.blockNum] == plotBlocks(iBlock)).annotData.ftData.moveSpeed' .* ...
+%             4.5 .* FRAME_RATE, 2, 'gaussian', smWin);
+%     plotFtData = cat(1, plotFtData, currFtData);
    plotBlockBounds(end + 1) = plotBlockBounds(end) + size(currFtData, 1); 
 end
 plotBlockBounds(end) = plotBlockBounds(end - 1);
+
+
+stimLines = [currBlockData.stimStart, currBlockData.stimEnd] ./ FRAME_RATE;
 
 
 % Annotations
@@ -422,7 +448,7 @@ f.Color = [1 1 1];
 f.Position = [-997 25 1000 950];
 
 smMoveSpeed = plotFtData;
-smMoveSpeedNoQui = smMoveSpeed; smMoveSpeedNoQui(plotAnnotData' ~= 3) = nan;
+smMoveSpeedNoQui = smMoveSpeed; smMoveSpeedNoQui(plotAnnotData ~= 3) = nan;
 
 % First plot with quiescence included
 ax = subaxis(3,1,1, 'sv', 0.15);hold on
