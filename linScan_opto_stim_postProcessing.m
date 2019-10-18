@@ -1,4 +1,4 @@
-expDate = '2019_08_05_exp_2';
+expDate = '2019_07_26_exp_1';
 sid = 0;
 
 parentDir = fullfile('D:\Dropbox (HMS)\2P Data\Imaging Data\', expDate);
@@ -13,18 +13,18 @@ saveDateStr = [saveDateStr, '-', expDate(end)];
 
 clear roiNames;
 
-roiNames(1) = {["stim-1", "stimCtrl-1", "stim-2", "stimCtrl-2", "Img"]};
-roiNames(2) = {["stim-1", "stimCtrl-1", "stim-2", "stimCtrl-2", "Img"]};
-roiNames(3) = {["stim-1", "stimCtrl-1", "stim-2", "stimCtrl-2", "Img"]};
-roiNames(4) = {["stim-1", "stimCtrl-1", "stim-2", "stimCtrl-2", "Img"]};
-roiNames(5) = {["stim-1", "stimCtrl-1", "stim-2", "stimCtrl-2", "Img"]};
-roiNames(6) = {["stim-1", "stimCtrl-1", "stim-2", "stimCtrl-2", "Img"]};
-roiNames(7) = {["stim-1", "stimCtrl-1", "stim-2", "stimCtrl-2", "Img"]};
-roiNames(8) = {["stim-1", "stimCtrl-1", "stim-2", "stimCtrl-2", "Img"]};
-roiNames(9) = {["stim-1", "stimCtrl-1", "stim-2", "stimCtrl-2", "Img"]};
-roiNames(10) = {["stim-1", "stimCtrl-1", "stim-2", "stimCtrl-2", "Img"]};
-roiNames(11) = {["stim-1", "stimCtrl-1", "stim-2", "stimCtrl-2", "Img"]};
-% roiNames(12) = {["stim-1", "stimCtrl-1", "stim-2", "stimCtrl-2", "Img"]};
+roiNames(1) = {["stim", "stimCtrl", "TypeF", "VLP"]};
+roiNames(2) = {["stim", "stimCtrl", "VLP", "TypeF"]};
+roiNames(3) = {["stim", "stimCtrl", "MidlineSMP", "TypeF"]};
+roiNames(4) = {["stim", "stimCtrl", "SLP"]};
+% roiNames(5) = {["stim-1", "stimCtrl-1", "MidlineSMP"]};
+% roiNames(6) = {["stim-1", "stimCtrl-1", "MidlineSMP"]};
+% roiNames(7) = {["stim-1", "stimCtrl-1", "MidlineSMP"]};
+% roiNames(8) = {["stim-1", "stimCtrl-1", "MidlineSMP"]};
+% roiNames(9) = {["stim-1", "stimCtrl-1", "VLP"]};
+% roiNames(10) = {["stim-1", "stimCtrl-1", "DimSMP"]};
+% roiNames(11) = {["stim-1", "stimCtrl-1", "MidlineSMP"]};
+% roiNames(12) = {["stim-1", "stimCtrl-1", "TypeF"]};
 % roiNames(13) = {["stim-1", "stimCtrl-1", "stim-2", "stimCtrl-2", "Img"]};
 % roiNames(14) = {["stim-1", "stimCtrl-1", "stim-2", "stimCtrl-2", "Img"]};
 % roiNames(15) = {["stim-1", "stimCtrl-1", "stim-2", "stimCtrl-2", "Img"]};
@@ -70,11 +70,11 @@ annotData = load(fullfile(parentDir, ['sid_', num2str(sid)], annotFileName));
 FRAME_RATE = annotData.frameInfo.FRAME_RATE;
 
 % blockBounds = [1:20:size(annotData.flowArr, 2)-1, size(annotData.flowArr, 2)]; 
-blockBounds = [1:10:size(annotData.flowArr, 2)-1, size(annotData.flowArr, 2)]; 
+% blockBounds = [1:10:size(annotData.flowArr, 2)-1, size(annotData.flowArr, 2)]; 
 % blockBounds = [1, 21, 41, 61, 71, 81, 91, 101, 111, 121, 130]; 
 % blockBounds = [1, 6, 11, 16, 21, 26, 46, 66, 86, 105]; 
 % blockBounds = [1:10:41 46 51:10:81 86 90] + 15;
-% blockBounds = [1:10:81 101:10:141 150]
+blockBounds = [1 21 41 61:10:121 130]
 
 try
     
@@ -177,7 +177,7 @@ catch foldME; rethrow(foldME); end
 
 %% IDENTIFY STIM ON- and OFFSETS
 
-currBlock = 10;
+currBlock = 9;
 manualThresh = 15;
 
 
@@ -227,15 +227,15 @@ disp(['stimCycleDurs =  ', num2str(stimCycleDurs)])
 disp(['interStimDurs =  ', num2str(interStimDurs)])
 
 catch foldME; rethrow(foldME); end
-% DIVIDE DATA INTO INDIVIDUAL STIM EPOCHS
+%% DIVIDE DATA INTO INDIVIDUAL STIM EPOCHS
 % 
 % % Check stim durations
 % disp(' ')
 % disp(['stimCycleDurs = ', num2str(stimCycleDurs)])
 % disp(['interStimDurs = ', num2str(interStimDurs)])
     
-skipCycles = [];
-analysisWindow = [46];
+skipCycles = [10];
+analysisWindow = [47];
 targetStimDur = 23;
 smWin = 3;
 

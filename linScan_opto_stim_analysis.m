@@ -1,6 +1,6 @@
 
 
-expDate = '2019_08_05_exp_2';
+expDate = '2019_07_26_exp_1';
 sid = 0;
 
 parentDir = fullfile('D:\Dropbox (HMS)\2P Data\Imaging Data\', expDate);
@@ -97,7 +97,7 @@ catch foldME; rethrow(foldME); end
 
 %% SELECT CURRENT BLOCK
 
-currBlock = 8;
+currBlock = 11;
 
 currBlockData = allBlockData([allBlockData.blockNum] == currBlock);
 allStimFlData = currBlockData.stimSepData.flData;
@@ -116,7 +116,7 @@ skipCycles = currBlockData.stimSepData.skipCycles;
 
 %% PLOT AVERAGED FLUORESCENCE AND MOVE SPEED OVERLAYS
 
-saveFig = 0;
+saveFig = 1;
 smWin = 3;
 
 try
@@ -361,18 +361,17 @@ catch foldME; rethrow(foldME); end
 
 %%
 
-groupName = 'TypeF stim';
-plotBlocks = [0 1 3 5 7 8]
+groupName = 'DimSMP stim';
+plotBlocks = [6:9]
 % plotBlocks = [0:2:allBlockData(end - 1).blockNum, allBlockData(end - 1).blockNum];
 % plotBlocks = 0:2:allBlockData(end - 1).blockNum;
 
-% groupName = 'TypeF stim';
-% plotBlocks = 1:2:7
-
 stimLines = [8 12];
-saveFig = 0;
+saveFig = 1;
 smWin = 5;
 
+try
+    
 plotAnnotData = []; plotFtData = []; plotBlockBounds = 1;
 for iBlock = 1:numel(plotBlocks)
     currBlockData = allBlockData([allBlockData.blockNum] == plotBlocks(iBlock)).stimSepData;
@@ -443,6 +442,8 @@ if saveFig
     save_figure(f, saveDir, [saveDateStr, '_', regexprep(groupName, ' ', '_'), '_2D_moveSpeed_summary']);
 end
 
+
+% Trial-averaged plots
 f = figure(203);clf
 f.Color = [1 1 1];
 f.Position = [-997 25 1000 950];
@@ -490,8 +491,9 @@ ax.XLabel.FontSize = 14;
 plot_stim_shading(stimLines);
 legend(ax.Children(1), 'Opto stim');
 
-
-
 if saveFig
     save_figure(f, saveDir, [saveDateStr, '_', regexprep(groupName, ' ', '_'), '_avg_moveSpeed']);
 end
+
+catch foldME; rethrow(foldME); end
+
