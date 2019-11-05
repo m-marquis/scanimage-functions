@@ -180,7 +180,7 @@ switch event.EventName
                     % Switch laser to control ROI
                     hSI.extCustomProps.pendingStimEndCycles = ...
                             hSI.extCustomProps.pendingStimEndCycles(2:end);
-                        nStimRois
+%                         nStimRois
                     for iStimRoi = 1:nStimRois
                         hStimRois(iStimRoi).powers = 0.3;
                         hControlRois(iStimRoi).powers = hSI.extCustomProps.stimROIPower;

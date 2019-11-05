@@ -1,10 +1,10 @@
 
 
 % parentDir = 'D:\Dropbox (HMS)\2P Data\Imaging Data\2019_05_25_exp_1';
-parentDir = 'E:\Michael\2019_07_17_exp_1';
+parentDir = 'E:\Michael\2019_08_08_exp_1';
 
 
-stackNums = [1 1 1 1 2 2 2];
+stackNums = [1 1 1 1 1 1 1 1 1 1 1 1];
 
 %% PROCESS RAW DATA FOR ALL BLOCKS
     

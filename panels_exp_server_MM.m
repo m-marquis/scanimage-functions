@@ -47,12 +47,12 @@ while 1
         % Scanimage path is already set to the correct directory
     else
         expDir = fullfile(parentDir, expDirName);
-        if ~isfolder(expDir)
+        if ~isdir(expDir)
             % Experiment directory needs to be created
             mkdir(expDir)
         else
             % Experiment directory already exists but scanimage path needs to be updated
-            hSI.logFilePath = expDir;
+            hSI.hScan2D.logFilePath = expDir;
         end
     end
     
