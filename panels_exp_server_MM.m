@@ -46,14 +46,13 @@ while 1
     if contains(parentDir, expDirName)
         % Scanimage path is already set to the correct directory
     else
+        % Update ScanImage path
         expDir = fullfile(parentDir, expDirName);
         if ~isdir(expDir)
             % Experiment directory needs to be created
-            mkdir(expDir)
-        else
-            % Experiment directory already exists but scanimage path needs to be updated
-            hSI.hScan2D.logFilePath = expDir;
+            mkdir(expDir)   
         end
+        hSI.hScan2D.logFilePath = expDir;
     end
     
     % Set base file name
@@ -69,8 +68,9 @@ while 1
     % Adjust other scanimage settings
     hSI.hScan2D.logFileCounter = 1;         % Set file counter to 1
     hSI.hChannels.loggingEnable = true;     % Enable logging
-    hSI.extTrigEnable = true;               % Enable external trigger    
-    
+    hSI.hChannels.channelSave = 1;          % Make sure we're only logging the green PMT 
+    hSI.extTrigEnable = true;               % Enable external trigger
+
     pause(1); % Can't remember if I had a good reason for putting this here, but it can't hurt
     
     % Start the grab
@@ -82,6 +82,7 @@ end
 
 % Clean up
 hSI.extTrigEnable = false;         
+hSI.hChannels.loggingEnable = false;
 
 % Close the socket
 fclose(t);
