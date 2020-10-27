@@ -35,14 +35,16 @@ while 1
     end
     
     % Parse message string (format should be: 'expID_expName_trial_0_dur_20')
-    expID = regexp(data, '.*(?=_.*_trial)', 'match', 'once');
-    expName = regexp(data, '(?<=_).*(?=_trial)', 'match', 'once');
+    disp(['Full message = ', data]);
+    expID = regexp(data, '.*(?=_trial)', 'match', 'once');
+    disp(['expID = ', expID]);
     trialNum = str2double(regexp(data, '(?<=_.*_trial_).*(?=_dur)', 'match', 'once'));
     trialDuration = str2double(regexp(data, '(?<=_dur_).*', 'match', 'once'));
     
     % Make sure scanimage is saving to the correct directory
     parentDir = hSI.hScan2D.logFilePath;
-    expDirName = [expID, '_', expName];
+    disp(['parentDir = ', parentDir]);
+    expDirName = expID;
     if contains(parentDir, expDirName)
         % Scanimage path is already set to the correct directory
     else
@@ -68,7 +70,7 @@ while 1
     % Adjust other scanimage settings
     hSI.hScan2D.logFileCounter = 1;         % Set file counter to 1
     hSI.hChannels.loggingEnable = true;     % Enable logging
-    hSI.hChannels.channelSave = 1;          % Make sure we're only logging the green PMT 
+%     hSI.hChannels.channelSave = 1;          % Make sure we're only logging the green PMT 
     hSI.extTrigEnable = true;               % Enable external trigger
 
     pause(1); % Can't remember if I had a good reason for putting this here, but it can't hurt

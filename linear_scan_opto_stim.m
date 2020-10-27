@@ -45,10 +45,6 @@ switch event.EventName
             end
             hImageRois = scanRois((2 * nStimRois) + 1:end);
             
-%             hStimRoi = scanRois(1).scanfields;
-%             hControlRoi = scanRois(2).scanfields;
-%             hImageRois = scanRois(3:end);
-            
             % Setup laser power as acquisition starts
             hSI.extCustomProps.stimROIPower = varargin{2}; % Get stim power
             hSI.extCustomProps.nFramesAcq = 0;
@@ -58,12 +54,10 @@ switch event.EventName
                 hStimRois(iStimRoi).powers = 0.1;
                 hControlRois(iStimRoi).powers = hSI.extCustomProps.stimROIPower;
             end
-%             hStimRoi.powers = 0.1;
-%             hControlRoi.powers = hSI.extCustomProps.stimROIPower;
             for iRoi = 1:numel(hImageRois)
                 hImageRois(iRoi).scanfields.powers = hSI.extCustomProps.imagingPower;
             end
-            hSI.hBeams.updateBeamBufferAsync(true);
+            hSI.hBeams.updateBeamBufferAsync(true); % Important to avoid ScanImage bug
             
             % Calculate trial start timing
             stimTimes = varargin{1}; % [startTime, endTime]
@@ -145,8 +139,7 @@ switch event.EventName
         
     case 'frameAcquired'
         try
-%             tic
-            
+           
             % Get handles for stimulus and control ROIs
             allRois = hSI.hRoiManager.roiGroupLineScan.rois;
             scanRois = []; scanRoiNums = [];
@@ -164,9 +157,6 @@ switch event.EventName
                 hStimRois(iStimRoi) = scanRois(currRoiNum).scanfields;
                 hControlRois(iStimRoi) = scanRois(currRoiNum + 1).scanfields;
             end
-%             
-%             hStimRoi = scanRois(1).scanfields;
-%             hControlRoi = scanRois(2).scanfields;
             
             % Get current internal frame count
             currCycleCount = hSI.hScan2D.hAcq.frameCounter;
@@ -180,18 +170,13 @@ switch event.EventName
                     % Switch laser to control ROI
                     hSI.extCustomProps.pendingStimEndCycles = ...
                             hSI.extCustomProps.pendingStimEndCycles(2:end);
-%                         nStimRois
                     for iStimRoi = 1:nStimRois
                         hStimRois(iStimRoi).powers = 0.3;
                         hControlRois(iStimRoi).powers = hSI.extCustomProps.stimROIPower;
                     end
-%                     hStimRoi.powers = 0.3;
-%                     hControlRoi.powers = hSI.extCustomProps.stimROIPower;
                     hSI.hBeams.updateBeamBufferAsync(true);
                     disp(['Setting laser to ', num2str(hSI.extCustomProps.stimROIPower), ...
                         '% power in control ROIs'])
-                    
-                    %  disp(['Stim switched to control ROI in ', num2str(toc, 2), ' sec'])
                     
                 elseif currCycleCount >= nextStimStartCycle
                     
@@ -202,14 +187,9 @@ switch event.EventName
                         hStimRois(iStimRoi).powers = hSI.extCustomProps.stimROIPower;
                         hControlRois(iStimRoi).powers = 0.3;
                     end
-%                     hStimRoi.powers = hSI.extCustomProps.stimROIPower;
-%                     hControlRoi.powers = 0.3;
                     hSI.hBeams.updateBeamBufferAsync(true);
                     disp(['Setting laser to ', num2str(hSI.extCustomProps.stimROIPower), ...
-                            '% power in stim ROIs'])
-                    
-                    % disp(['Stim switched to stim ROI in ', num2str(toc, 2), ' sec'])
-                    
+                            '% power in stim ROIs'])                    
                 end
                 
             end
