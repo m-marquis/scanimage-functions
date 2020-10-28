@@ -36,14 +36,14 @@ while 1
     blockDur = str2num(durCell{:});
     nTrialCell = regexp(data, '(?<=nTrials_).*', 'match');
     nTrials = str2num(nTrialCell{:});
-    hSI.hScan2D.logFileStem = data; % set the base file name for the Tiff file     
+    hSI.hScan2D.logFileStem = data; % set the base file name for the data file(s)     
     
-     % Configure acquitions
+    % Configure acquitions
     hSI.hChannels.loggingEnable = true;     % Make sure logging is enabled  
     hSI.hScan2D.logFileCounter = 1;         % Set file counter to 1    
     hSI.extTrigEnable = true;               % Enable external trigger 
     hSI.extCustomProps.nTrials = nTrials;   % Set total number of trials
-    hSI.hFastZ.enable = true;
+    hSI.hFastZ.enable = true;               % Make sure fastZ is enabled
     hSI.acqsPerLoop = 1;
     
     % Set up scan cycles

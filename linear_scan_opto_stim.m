@@ -1,28 +1,37 @@
 function linear_scan_opto_stim(src, event, varargin)
-% Custom user function to allow online control of laser power in multiple linear scan ROIs at specific times in
-% each trial by counting the acquired frames and updating ROI power accordingly.
+% Custom user function to allow online control of laser power in multiple linear scan ROIs at 
+% specific times in each trial by counting the acquired frames and updating ROI power accordingly.
 %
-% First argument is a 2-element vector specifying [startTime, endTime] in seconds.
+% First argument is a 2-element vector specifying [startTime, endTime] in seconds of the photostim.
 %
-% Second argument specifies what laser power % to use for the photostimulation (laser power at the 
-%       beginning of the acquisition will be used as the imaging laser power).
+% Second argument specifies what laser power % to use for the photostimulation (the current laser 
+% power at the beginning of the acquisition will be used as the imaging laser power).
 %  
 % Third argument specifies the number of photostim ROIs (defaults to one if you omit this argument). 
-% For each stim ROI, the ROI immediately after that is assumed to be the cognate control ROI. For
-% example, if you pass [2] as this argument, ROIs 1 and 3 will be photostims and ROIs 2 and 4 will 
+% For each stim ROI, the ROI immediately after that is assumed to be the corresponding control ROI. 
+% For example, if you pass [2] as this argument, ROIs 1 and 3 will be photostims and ROIs 2 and 4 will 
 % be the corresponding control ROIs.
 
-hSI = src.hSI;
+hSI = src.hSI; % Get the current ScanImage object
 
+
+% Check the name of the trigger event that called the function, then run the appropriate code
 switch event.EventName
     
-    case 'acqModeStart'
-        try
+    case 'acqModeStart' % Fires at start of acquisition
+
             disp('Starting grab')
             
-            % Get handles for stimulus and control ROIs
+            % Set default number of stim ROIs to one if none was provided
+            if numel(varargin) > 2
+                nStimRois = varargin{3};
+            else
+                nStimRois = 1;
+            end
+
+            % Get handles for all the scanning ROIs (photostim/control and imaging ROIs)
             allRois = hSI.hRoiManager.roiGroupLineScan;
-            scanRois = []; scanRoiNums = [];
+            scanRoiNums = [];
             for iRoi = 1:numel(allRois.rois)
                 currRoiName = allRois.rois(iRoi).scanfields.shortDescription;
                 if ~strcmp(currRoiName(7:end), 'pause') && ...
@@ -31,13 +40,11 @@ switch event.EventName
                 end
             end
             scanRois = allRois.rois(scanRoiNums);
-            
-             if numel(varargin) > 2
-                nStimRois = varargin{3};
-            else
-                nStimRois = 1;
-             end
+
+            % hSI.extCustomProps can be used to keep track of variables in between function calls
             hSI.extCustomProps.nStimRois = nStimRois;
+            
+            % Separate the photostim, control, and imaging ROI handles
             for iStimRoi = 1:nStimRois
                 currRoiNum = (2 * iStimRoi) - 1;
                 hStimRois(iStimRoi) = scanRois(currRoiNum).scanfields;
@@ -45,21 +52,27 @@ switch event.EventName
             end
             hImageRois = scanRois((2 * nStimRois) + 1:end);
             
-            % Setup laser power as acquisition starts
-            hSI.extCustomProps.stimROIPower = varargin{2}; % Get stim power
+            % Set up laser power as acquisition starts
+            hSI.extCustomProps.stimROIPower = varargin{2};
             hSI.extCustomProps.nFramesAcq = 0;
-            hSI.hBeams.beamsOff();
+            hSI.hBeams.beamsOff(); % Can't remember why I have this, may or may not be necessary
             hSI.extCustomProps.stimOn = 0;
+
+            % Set the laser power to low/off in the stim ROI and to the stim power in the control ROI
             for iStimRoi = 1:nStimRois
-                hStimRois(iStimRoi).powers = 0.1;
+                hStimRois(iStimRoi).powers = 0.3;
                 hControlRois(iStimRoi).powers = hSI.extCustomProps.stimROIPower;
             end
+
+            % Set the laser power in the imaging ROIs (this value was stored here during the 
+            % initial setup of the fly_tracker_server function)
             for iRoi = 1:numel(hImageRois)
                 hImageRois(iRoi).scanfields.powers = hSI.extCustomProps.imagingPower;
             end
-            hSI.hBeams.updateBeamBufferAsync(true); % Important to avoid ScanImage bug
+
+            hSI.hBeams.updateBeamBufferAsync(true); % Important to avoid ScanImage bug!!
             
-            % Calculate trial start timing
+            % Calculate trial start timing 
             stimTimes = varargin{1}; % [startTime, endTime]
             cps = hSI.hRoiManager.scanFrameRate;
             cpt = hSI.extCustomProps.cyclesPerTrial;
@@ -75,7 +88,6 @@ switch event.EventName
             hSI.extCustomProps.pendingTrialStartCycles = trialStartCycles;
             hSI.extCustomProps.nextTrialNum = 1;
             disp(['trialStartCycles: ', num2str(trialStartCycles)]);
-            
             
             % Calculate stim timing
             if ~isempty(stimTimes)
@@ -118,16 +130,13 @@ switch event.EventName
                 disp('No photostimulation in this block');
             end
             disp('--------------------------------------------')
-            %         disp('Starting trial 1...')
-        catch ME
-            disp(ME.message);
-            rethrow(ME)
-        end
-    case 'acqModeDone'
+
+
+    case 'acqModeDone' % Fires at end of acquisition
         
         disp('Block finished')
         
-        % Save log file for the block that just finished
+        % Save log file containing all your custom properties for the block that just finished
         optoStimInfo = hSI.extCustomProps;        
         baseName = hSI.hScan2D.logFileStem;
         saveDir = hSI.hScan2D.logFilePath;
@@ -137,9 +146,9 @@ switch event.EventName
         hSI.hBeams.powers = hSI.extCustomProps.imagingPower;
         hSI.extCustomProps = [];
         
-    case 'frameAcquired'
-        try
-           
+
+    case 'frameAcquired' % Fires every time a frame/scan cycle is acquired
+
             % Get handles for stimulus and control ROIs
             allRois = hSI.hRoiManager.roiGroupLineScan.rois;
             scanRois = []; scanRoiNums = [];
@@ -158,7 +167,7 @@ switch event.EventName
                 hControlRois(iStimRoi) = scanRois(currRoiNum + 1).scanfields;
             end
             
-            % Get current internal frame count
+            % Get ScanImage's current internal frame count
             currCycleCount = hSI.hScan2D.hAcq.frameCounter;
             
             % Modify laser power if necessary
@@ -174,7 +183,7 @@ switch event.EventName
                         hStimRois(iStimRoi).powers = 0.3;
                         hControlRois(iStimRoi).powers = hSI.extCustomProps.stimROIPower;
                     end
-                    hSI.hBeams.updateBeamBufferAsync(true);
+                    hSI.hBeams.updateBeamBufferAsync(true); % Important!!
                     disp(['Setting laser to ', num2str(hSI.extCustomProps.stimROIPower), ...
                         '% power in control ROIs'])
                     
@@ -187,11 +196,10 @@ switch event.EventName
                         hStimRois(iStimRoi).powers = hSI.extCustomProps.stimROIPower;
                         hControlRois(iStimRoi).powers = 0.3;
                     end
-                    hSI.hBeams.updateBeamBufferAsync(true);
+                    hSI.hBeams.updateBeamBufferAsync(true); % Important!!
                     disp(['Setting laser to ', num2str(hSI.extCustomProps.stimROIPower), ...
                             '% power in stim ROIs'])                    
-                end
-                
+                end%
             end
             
             % Notify user if starting new trial
@@ -202,11 +210,6 @@ switch event.EventName
                     hSI.extCustomProps.nextTrialNum = hSI.extCustomProps.nextTrialNum + 1;
                 end
             end
-            
-        catch ME
-            disp(ME.message);
-            rethrow(ME)
-        end
 
 end%case
 
